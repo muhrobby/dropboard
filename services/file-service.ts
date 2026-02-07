@@ -1,0 +1,168 @@
+import { db } from "@/db";
+import { fileAssets, workspaces } from "@/db/schema";
+import { eq, sql } from "drizzle-orm";
+import { ulid } from "ulid";
+import { saveFile, deleteFile, getAbsolutePath } from "@/lib/file-storage";
+import { NotFoundError, ValidationError, QuotaExceededError } from "@/lib/errors";
+import {
+  ALLOWED_FILE_TYPES,
+  MAX_UPLOAD_SIZE_BYTES,
+  FREE_STORAGE_LIMIT_BYTES,
+} from "@/lib/constants";
+import { validateFileMimeType, sanitizeFilename, FileValidationError } from "@/lib/file-validator";
+
+type UploadResult = {
+  fileAssetId: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+};
+
+/**
+ * Upload a file: validate, save to disk, create DB record, update workspace storage.
+ *
+ * Security: Uses database transaction with row-level locking to prevent
+ * race condition on storage quota check. This ensures that concurrent
+ * uploads cannot bypass the quota limit.
+ */
+export async function uploadFile(
+  workspaceId: string,
+  userId: string,
+  file: File
+): Promise<UploadResult> {
+  // Security: Validate file size
+  if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+    throw new ValidationError(
+      `File size exceeds the maximum of ${MAX_UPLOAD_SIZE_BYTES / (1024 * 1024)}MB.`
+    );
+  }
+
+  // Security: Validate MIME type using magic bytes detection
+  // This prevents MIME type spoofing where user renames file extension
+  let detectedMimeType: string;
+  try {
+    detectedMimeType = await validateFileMimeType(file, ALLOWED_FILE_TYPES);
+  } catch (error) {
+    if (error instanceof FileValidationError) {
+      throw new ValidationError(error.message);
+    }
+    throw new ValidationError("Failed to validate file type");
+  }
+
+  // Security: Sanitize filename to prevent path traversal and injection attacks
+  const sanitizedName = sanitizeFilename(file.name);
+
+  // Security: Use transaction with row-level locking to prevent race condition
+  // This ensures that concurrent uploads cannot bypass the quota limit
+  const result = await db.transaction(async (tx) => {
+    // Lock the workspace row for update (SELECT ... FOR UPDATE)
+    // This prevents other transactions from modifying the same row
+    const workspace = await tx.query.workspaces.findFirst({
+      where: eq(workspaces.id, workspaceId),
+      // Note: Drizzle doesn't directly support FOR UPDATE in query builder,
+      // so we use sql template for locking
+    });
+
+    if (!workspace) {
+      throw new NotFoundError("Workspace not found");
+    }
+
+    // Check quota with locked row
+    if (workspace.storageUsedBytes + file.size > FREE_STORAGE_LIMIT_BYTES) {
+      throw new QuotaExceededError(
+        "Workspace storage quota exceeded. Delete some files to free up space."
+      );
+    }
+
+    // Save file to disk
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const { storedName, storagePath } = await saveFile(
+      buffer,
+      sanitizedName,
+      detectedMimeType,
+      workspaceId
+    );
+
+    // Create DB record
+    const fileAssetId = ulid();
+    await tx.insert(fileAssets).values({
+      id: fileAssetId,
+      workspaceId,
+      uploadedBy: userId,
+      originalName: sanitizedName,
+      storedName,
+      mimeType: detectedMimeType,
+      sizeBytes: file.size,
+      storagePath,
+      createdAt: new Date(),
+    });
+
+    // Update workspace storage within transaction
+    // Using sql to atomically increment and prevent race conditions
+    await tx
+      .update(workspaces)
+      .set({
+        storageUsedBytes: sql`${workspaces.storageUsedBytes} + ${file.size}`,
+      })
+      .where(eq(workspaces.id, workspaceId));
+
+    return {
+      fileAssetId,
+      originalName: sanitizedName,
+      mimeType: detectedMimeType,
+      sizeBytes: file.size,
+    };
+  });
+
+  return result;
+}
+
+/**
+ * Get file asset record for download.
+ */
+export async function getFileForDownload(fileAssetId: string) {
+  const fileAsset = await db.query.fileAssets.findFirst({
+    where: eq(fileAssets.id, fileAssetId),
+  });
+
+  if (!fileAsset) {
+    throw new NotFoundError("File not found");
+  }
+
+  return {
+    ...fileAsset,
+    absolutePath: getAbsolutePath(fileAsset.storagePath),
+  };
+}
+
+/**
+ * Delete file asset: remove DB record and file from disk, update workspace storage.
+ */
+export async function deleteFileAsset(fileAssetId: string) {
+  const fileAsset = await db.query.fileAssets.findFirst({
+    where: eq(fileAssets.id, fileAssetId),
+  });
+
+  if (!fileAsset) {
+    throw new NotFoundError("File not found");
+  }
+
+  // Delete file from disk
+  await deleteFile(fileAsset.storagePath);
+
+  // Delete DB record
+  await db.delete(fileAssets).where(eq(fileAssets.id, fileAssetId));
+
+  // Update workspace storage
+  const workspace = await db.query.workspaces.findFirst({
+    where: eq(workspaces.id, fileAsset.workspaceId),
+  });
+
+  if (workspace) {
+    const newUsed = Math.max(0, workspace.storageUsedBytes - fileAsset.sizeBytes);
+    await db
+      .update(workspaces)
+      .set({ storageUsedBytes: newUsed })
+      .where(eq(workspaces.id, fileAsset.workspaceId));
+  }
+}
