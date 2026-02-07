@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ImageDown, Upload, Plus, Folder, Clock, AlertTriangle, Files } from "lucide-react";
+import { ImageDown, Upload, Plus, Folder, FolderOpen, Clock, AlertTriangle, Files, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,9 +13,16 @@ import { useItems } from "@/hooks/use-items";
 import type { ItemResponse } from "@/types/api";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { formatBytes, getDaysRemaining } from "@/components/drops/drops-page-utils";
 
 type FilterTab = "all" | "images" | "files";
 type PinFilter = "all" | "pinned" | "temporary";
+
+interface FolderGroup {
+  name: string;
+  items: ItemResponse[];
+  createdAt: string;
+}
 
 function isImageItem(item: ItemResponse): boolean {
   return item.fileAsset?.mimeType?.startsWith("image/") ?? false;
@@ -46,20 +53,40 @@ function groupByDate(items: ItemResponse[]): Record<string, ItemResponse[]> {
   return groups;
 }
 
-function getDaysRemaining(expiresAt: string | null): number | null {
-  if (!expiresAt) return null;
-  const now = new Date();
-  const expiry = new Date(expiresAt);
-  const diffTime = expiry.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays > 0 ? diffDays : 0;
+// Extract folder name from title (format: "Folder Name/FileName" or "Folder Name (+N more)")
+function extractFolderName(title: string | null): string | null {
+  if (!title) return null;
+  const match = title.match(/^([^/]+?)(?:\/|\s\(\+\d+\s+more\))$/);
+  return match ? match[1] : null;
 }
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+// Group items by folder name
+function groupByFolders(items: ItemResponse[]): { folders: FolderGroup[]; singles: ItemResponse[] } {
+  const folderMap = new Map<string, ItemResponse[]>();
+  const singles: ItemResponse[] = [];
+
+  for (const item of items) {
+    const folderName = extractFolderName(item.title);
+    if (folderName) {
+      if (!folderMap.has(folderName)) {
+        folderMap.set(folderName, []);
+      }
+      folderMap.get(folderName)!.push(item);
+    } else {
+      singles.push(item);
+    }
+  }
+
+  const folders: FolderGroup[] = Array.from(folderMap.entries()).map(([name, items]) => ({
+    name,
+    items,
+    createdAt: items.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0].createdAt,
+  }));
+
+  // Sort folders by creation date
+  folders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  return { folders, singles };
 }
 
 function StatCard({
@@ -96,10 +123,84 @@ function StatCard({
   );
 }
 
+function FolderCard({ folder }: { folder: FolderGroup }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const itemCount = folder.items.length;
+  const totalSize = folder.items.reduce((sum, item) => sum + (item.fileAsset?.sizeBytes || 0), 0);
+  const imageCount = folder.items.filter(isImageItem).length;
+
+  // Get earliest expiry date in folder
+  let minExpiryDays: number | null = null;
+  for (const item of folder.items) {
+    const days = getDaysRemaining(item.expiresAt);
+    if (days !== null) {
+      if (minExpiryDays === null || days < minExpiryDays) {
+        minExpiryDays = days;
+      }
+    }
+  }
+
+  return (
+    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full text-left p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors"
+      >
+        <div className={cn(
+          "flex items-center justify-center w-10 h-10 rounded-lg transition-colors",
+          isExpanded ? "bg-primary/20 text-primary" : "bg-muted"
+        )}>
+          {isExpanded ? <FolderOpen className="w-5 h-5" /> : <Folder className="w-5 h-5" />}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-semibold truncate">{folder.name}</h3>
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+              {itemCount} file{itemCount > 1 ? "s" : ""}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span>{formatBytes(totalSize)}</span>
+            {imageCount > 0 && (
+              <span>{imageCount} image{imageCount > 1 ? "s" : ""}</span>
+            )}
+            {minExpiryDays !== null && minExpiryDays <= 7 && (
+              <span className={cn(
+                "flex items-center gap-1",
+                minExpiryDays <= 1 ? "text-orange-500" : "text-yellow-600"
+              )}>
+                <Clock className="w-3 h-3" />
+                Expires in {minExpiryDays} day{minExpiryDays > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <ChevronRight className={cn(
+          "w-5 h-5 text-muted-foreground transition-transform",
+          isExpanded && "rotate-90"
+        )} />
+      </button>
+
+      {isExpanded && (
+        <div className="border-t p-4 bg-muted/20">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {folder.items.map((item) => (
+              <DropCard key={item.id} item={item} />
+            ))}
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export default function DropsPage() {
   const setUploadModalOpen = useUIStore((s) => s.setUploadModalOpen);
   const [filterTab, setFilterTab] = useState<FilterTab>("all");
   const [pinFilter, setPinFilter] = useState<PinFilter>("all");
+  const [viewMode, setViewMode] = useState<"grid" | "folder">("folder");
 
   const { data, isLoading } = useItems({ type: "drop" });
   const items = data?.data ?? [];
@@ -124,7 +225,9 @@ export default function DropsPage() {
     return result;
   }, [items, filterTab, pinFilter]);
 
-  const grouped = useMemo(() => groupByDate(filteredItems), [filteredItems]);
+  // Group by folders or date
+  const { folders, singles } = useMemo(() => groupByFolders(filteredItems), [filteredItems]);
+  const groupedByDate = useMemo(() => groupByDate(singles), [singles]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -133,23 +236,23 @@ export default function DropsPage() {
     const totalImages = items.filter(isImageItem).length;
     const pinnedCount = items.filter((item) => item.isPinned).length;
 
-    // Files expiring soon (within 1-7 days)
+    // Count folders
+    const folderCount = new Set(
+      items
+        .map((item) => extractFolderName(item.title))
+        .filter((name): name is string => name !== null)
+    ).size;
+
+    // Files expiring soon
     let expiringSoon = 0;
     let expiringToday = 0;
-    const expiryCounts: Record<number, number> = {};
 
     items.forEach((item) => {
-      if (item.isPinned) return; // Pinned items don't expire
-
+      if (item.isPinned) return;
       const daysRemaining = getDaysRemaining(item.expiresAt);
       if (daysRemaining !== null) {
-        if (daysRemaining <= 1) {
-          expiringToday++;
-        }
-        if (daysRemaining <= 3 && daysRemaining > 0) {
-          expiringSoon++;
-        }
-        expiryCounts[daysRemaining] = (expiryCounts[daysRemaining] || 0) + 1;
+        if (daysRemaining <= 1) expiringToday++;
+        if (daysRemaining <= 3 && daysRemaining > 0) expiringSoon++;
       }
     });
 
@@ -158,9 +261,9 @@ export default function DropsPage() {
       totalSize,
       totalImages,
       pinnedCount,
+      folderCount,
       expiringToday,
       expiringSoon,
-      expiryCounts,
     };
   }, [items]);
 
@@ -169,10 +272,30 @@ export default function DropsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Drops</h1>
-        <Button onClick={() => setUploadModalOpen(true)} className="hidden sm:flex">
-          <Upload className="mr-2 h-4 w-4" />
-          Upload
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={viewMode === "folder" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("folder")}
+            className="gap-2"
+          >
+            <Folder className="w-4 h-4" />
+            Folders
+          </Button>
+          <Button
+            variant={viewMode === "grid" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("grid")}
+            className="gap-2"
+          >
+            <Files className="w-4 h-4" />
+            Grid
+          </Button>
+          <Button onClick={() => setUploadModalOpen(true)} className="hidden sm:flex">
+            <Upload className="mr-2 h-4 w-4" />
+            Upload
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
@@ -188,8 +311,9 @@ export default function DropsPage() {
           />
           <StatCard
             icon={Folder}
-            label="Storage Used"
-            value={formatBytes(stats.totalSize)}
+            label={viewMode === "folder" ? "Folders" : "Storage Used"}
+            value={viewMode === "folder" ? stats.folderCount : formatBytes(stats.totalSize)}
+            subtext={viewMode === "folder" ? `${stats.totalFiles - stats.folderCount * 2} files` : `${stats.pinnedCount} pinned`}
             color="text-purple-500"
             bgColor="bg-purple-500/10"
           />
@@ -261,7 +385,6 @@ export default function DropsPage() {
       {/* Loading state */}
       {isLoading && (
         <div className="space-y-6">
-          {/* Stats skeleton */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="p-4 rounded-xl border">
@@ -275,7 +398,6 @@ export default function DropsPage() {
               </div>
             ))}
           </div>
-          {/* Cards skeleton */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="space-y-2">
@@ -306,24 +428,74 @@ export default function DropsPage() {
         </div>
       )}
 
-      {/* Items grouped by date */}
-      {!isLoading &&
-        filteredItems.length > 0 &&
-        Object.entries(grouped).map(
-          ([label, groupItems]) =>
-            groupItems.length > 0 && (
-              <div key={label} className="mb-6">
-                <h2 className="text-sm font-medium text-muted-foreground mb-3">
-                  {label}
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {groupItems.map((item) => (
-                    <DropCard key={item.id} item={item} />
-                  ))}
-                </div>
+      {/* Folder View */}
+      {!isLoading && filteredItems.length > 0 && viewMode === "folder" && (
+        <div className="space-y-4">
+          {folders.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-medium text-muted-foreground">
+                Folders ({folders.length})
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {folders.map((folder) => (
+                  <FolderCard key={folder.name} folder={folder} />
+                ))}
               </div>
-            )
-        )}
+            </div>
+          )}
+
+          {singles.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-medium text-muted-foreground">
+                Individual Files ({singles.length})
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {singles.map((item) => (
+                  <DropCard key={item.id} item={item} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Date grouped singles */}
+          {Object.entries(groupedByDate).map(
+            ([label, groupItems]) =>
+              groupItems.length > 0 && (
+                <div key={label} className="mb-6">
+                  <h2 className="text-sm font-medium text-muted-foreground mb-3">
+                    {label}
+                  </h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {groupItems.map((item) => (
+                      <DropCard key={item.id} item={item} />
+                    ))}
+                  </div>
+                </div>
+              )
+          )}
+        </div>
+      )}
+
+      {/* Grid View */}
+      {!isLoading && filteredItems.length > 0 && viewMode === "grid" && (
+        <>
+          {Object.entries(groupedByDate).map(
+            ([label, groupItems]) =>
+              groupItems.length > 0 && (
+                <div key={label} className="mb-6">
+                  <h2 className="text-sm font-medium text-muted-foreground mb-3">
+                    {label}
+                  </h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {groupItems.map((item) => (
+                      <DropCard key={item.id} item={item} />
+                    ))}
+                  </div>
+                </div>
+              )
+          )}
+        </>
+      )}
 
       {/* Mobile FAB */}
       <Button

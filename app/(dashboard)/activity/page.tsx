@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useActivity } from "@/hooks/use-members";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,11 @@ import {
   UserMinus,
   ShieldCheck,
   MailX,
+  Zap,
+  Users,
+  FolderOpen,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { ActivityAction } from "@/types";
 
 const actionConfig: Record<
@@ -68,6 +73,40 @@ function getMetadataLabel(action: ActivityAction, metadata: Record<string, unkno
   return null;
 }
 
+function StatCard({
+  icon,
+  label,
+  value,
+  subtext,
+  color,
+  bgColor,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  subtext?: string;
+  color: string;
+  bgColor: string;
+}) {
+  const Icon = icon;
+  return (
+    <Card className="p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-center gap-4">
+        <div className={cn("flex items-center justify-center w-12 h-12 rounded-xl", bgColor)}>
+          <Icon className={cn("w-6 h-6", color)} />
+        </div>
+        <div className="flex-1">
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="text-2xl font-bold">{value}</p>
+          {subtext && (
+            <p className="text-xs text-muted-foreground mt-0.5">{subtext}</p>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export default function ActivityPage() {
   const {
     data,
@@ -79,6 +118,31 @@ export default function ActivityPage() {
 
   const allLogs = data?.pages.flatMap((p) => p.logs) ?? [];
 
+  // Calculate statistics
+  const stats = useMemo(() => {
+    const totalActions = allLogs.length;
+    const uploads = allLogs.filter((log) => log.action === "ITEM_CREATED").length;
+    const deletes = allLogs.filter((log) => log.action === "ITEM_DELETED").length;
+    const pins = allLogs.filter((log) => log.action === "ITEM_PINNED").length;
+    const unpins = allLogs.filter((log) => log.action === "ITEM_UNPINNED").length;
+    const invitesSent = allLogs.filter((log) => log.action === "INVITE_SENT").length;
+    const invitesAccepted = allLogs.filter((log) => log.action === "INVITE_ACCEPTED").length;
+
+    // Count unique actors
+    const uniqueActors = new Set(allLogs.map((log) => log.actor?.name)).size;
+
+    return {
+      totalActions,
+      uploads,
+      deletes,
+      pins,
+      unpins,
+      invitesSent,
+      invitesAccepted,
+      uniqueActors,
+    };
+  }, [allLogs]);
+
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 pb-20 md:pb-6">
       <div>
@@ -87,6 +151,44 @@ export default function ActivityPage() {
           Recent actions in this workspace
         </p>
       </div>
+
+      {/* Stat Cards */}
+      {!isLoading && allLogs.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-in fade-in slide-in-from-bottom-2">
+          <StatCard
+            icon={Zap}
+            label="Total Actions"
+            value={stats.totalActions}
+            subtext="All activity"
+            color="text-blue-500"
+            bgColor="bg-blue-500/10"
+          />
+          <StatCard
+            icon={Upload}
+            label="Items Created"
+            value={stats.uploads}
+            subtext="New items added"
+            color="text-green-500"
+            bgColor="bg-green-500/10"
+          />
+          <StatCard
+            icon={Pin}
+            label="Items Pinned"
+            value={stats.pins}
+            subtext={`${stats.unpins} unpinned`}
+            color="text-purple-500"
+            bgColor="bg-purple-500/10"
+          />
+          <StatCard
+            icon={Users}
+            label="Active Members"
+            value={stats.uniqueActors}
+            subtext="Participating"
+            color="text-orange-500"
+            bgColor="bg-orange-500/10"
+          />
+        </div>
+      )}
 
       <Card>
         <CardHeader>

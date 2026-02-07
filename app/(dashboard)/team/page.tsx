@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { useWorkspaceStore } from "@/stores/workspace-store";
 import {
@@ -23,9 +24,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Mail, X, Clock, Crown } from "lucide-react";
+import { Users, Mail, X, Clock, Crown, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { ROLE_PERMISSIONS } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import type { MemberRole } from "@/types";
 import type { Permission } from "@/lib/constants";
 
@@ -52,6 +54,7 @@ function formatDate(dateStr: string) {
 
 export default function TeamPage() {
   const { data: session } = useSession();
+  const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
   const workspace = useWorkspaceStore((s) => s.getActiveWorkspace());
   const { data: members, isLoading: membersLoading } = useMembers();
   const { data: invites, isLoading: invitesLoading } = useInvites();
@@ -91,6 +94,51 @@ export default function TeamPage() {
     }
   }
 
+  function handleCopyInviteLink(token: string, inviteId: string) {
+    const inviteLink = `${window.location.origin}/invite/${token}`;
+    navigator.clipboard.writeText(inviteLink).then(() => {
+      setCopiedInviteId(inviteId);
+      toast.success("Invite link copied to clipboard");
+      setTimeout(() => setCopiedInviteId(null), 2000);
+    }).catch(() => {
+      toast.error("Failed to copy invite link");
+    });
+  }
+
+  function StatCard({
+    icon,
+    label,
+    value,
+    subtext,
+    color,
+    bgColor,
+  }: {
+    icon: React.ElementType;
+    label: string;
+    value: string | number;
+    subtext?: string;
+    color: string;
+    bgColor: string;
+  }) {
+    const Icon = icon;
+    return (
+      <Card className="p-4 hover:shadow-md transition-shadow">
+        <div className="flex items-center gap-4">
+          <div className={cn("flex items-center justify-center w-12 h-12 rounded-xl", bgColor)}>
+            <Icon className={cn("w-6 h-6", color)} />
+          </div>
+          <div className="flex-1">
+            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="text-2xl font-bold">{value}</p>
+            {subtext && (
+              <p className="text-xs text-muted-foreground mt-0.5">{subtext}</p>
+            )}
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   if (!isTeamWorkspace) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
@@ -115,6 +163,43 @@ export default function TeamPage() {
         </div>
         {canInvite && <InviteDialog />}
       </div>
+
+      {/* Stat Cards */}
+      {!membersLoading && !invitesLoading && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-in fade-in slide-in-from-bottom-2">
+          <StatCard
+            icon={Users}
+            label="Total Members"
+            value={members?.length || 0}
+            color="text-blue-500"
+            bgColor="bg-blue-500/10"
+          />
+          <StatCard
+            icon={Mail}
+            label="Pending Invites"
+            value={invites?.filter((i) => i.status === "pending").length || 0}
+            subtext={canInvite ? "Send more invites" : "Contact admin"}
+            color="text-orange-500"
+            bgColor="bg-orange-500/10"
+          />
+          <StatCard
+            icon={Crown}
+            label="Workspace Type"
+            value="Team"
+            subtext="Collaboration enabled"
+            color="text-purple-500"
+            bgColor="bg-purple-500/10"
+          />
+          <StatCard
+            icon={Clock}
+            label="Your Role"
+            value={currentUserRole.charAt(0).toUpperCase() + currentUserRole.slice(1)}
+            subtext={canManageMembers ? "Full access" : canInvite ? "Can invite" : "Limited access"}
+            color="text-green-500"
+            bgColor="bg-green-500/10"
+          />
+        </div>
+      )}
 
       {/* Members */}
       <Card>
@@ -255,6 +340,25 @@ export default function TeamPage() {
                         Expires {formatDate(invite.expiresAt)}
                       </div>
                     </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopyInviteLink(invite.token, invite.id)}
+                      className="gap-1.5 h-8"
+                    >
+                      {copiedInviteId === invite.id ? (
+                        <>
+                          <Check className="h-3.5 w-3.5" />
+                          Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5" />
+                          Copy Link
+                        </>
+                      )}
+                    </Button>
 
                     <RoleBadge role={invite.role as MemberRole} />
 
