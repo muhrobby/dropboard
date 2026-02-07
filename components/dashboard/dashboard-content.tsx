@@ -193,7 +193,7 @@ function TrendChart({
   );
 }
 
-export default function DashboardPage() {
+export function DashboardContent() {
   // Fetch data from various sources
   const { data: dropsData, isLoading: dropsLoading } = useItems({ type: "drop" });
   const { data: linksData, isLoading: linksLoading } = useItems({ type: "link" });
