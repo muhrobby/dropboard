@@ -18,12 +18,12 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const navItems = [
-  { href: "/drops", label: "Drops", icon: ImageDown },
-  { href: "/pinboard", label: "Pinboard", icon: Bookmark },
-  { href: "/search", label: "Search", icon: Search },
-  { href: "/team", label: "Team", icon: Users },
-  { href: "/activity", label: "Activity", icon: Activity },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard/drops", label: "Drops", icon: ImageDown },
+  { href: "/dashboard/pinboard", label: "Pinboard", icon: Bookmark },
+  { href: "/dashboard/search", label: "Search", icon: Search },
+  { href: "/dashboard/team", label: "Team", icon: Users },
+  { href: "/dashboard/activity", label: "Activity", icon: Activity },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
 export function MobileSidebar() {

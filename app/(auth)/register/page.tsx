@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signUp } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,9 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,8 +49,16 @@ export default function RegisterPage() {
       }
 
       toast.success("Account created successfully!");
-      router.push("/dashboard");
-      router.refresh();
+
+      // Get redirect URL from callbackUrl param (for invite flow)
+      const callbackUrl = searchParams.get("callbackUrl");
+      const redirectTo = callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
+
+      // Wait a bit for cookies to be set, then redirect
+      setTimeout(() => {
+        router.refresh();
+        router.push(redirectTo);
+      }, 500);
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
@@ -133,5 +142,13 @@ export default function RegisterPage() {
         </CardFooter>
       </form>
     </Card>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   );
 }

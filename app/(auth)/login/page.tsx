@@ -39,14 +39,14 @@ function LoginForm() {
 
 
       if (result.error) {
-        console.error("[Login] Error:", result.error);
+
         toast.error(result.error.message || "Login failed");
         return;
       }
 
       // Check if login actually succeeded
       if (!result.data?.user) {
-        console.error("[Login] No user in response");
+
         toast.error("Login failed - no user data received");
         return;
       }
@@ -68,7 +68,7 @@ function LoginForm() {
       }, 500);
 
     } catch (error) {
-      console.error("[Login] Exception:", error);
+
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
