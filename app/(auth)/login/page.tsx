@@ -29,22 +29,48 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
+      console.log("[Login] Starting login for:", email);
+      
       const result = await signIn.email({
         email,
         password,
       });
 
+      console.log("[Login] Response:", { 
+        hasError: !!result.error, 
+        hasUser: !!result.data?.user
+      });
+
       if (result.error) {
+        console.error("[Login] Error:", result.error);
         toast.error(result.error.message || "Login failed");
         return;
       }
 
-      // Redirect to callbackUrl if set by middleware, otherwise /dashboard
+      // Check if login actually succeeded
+      if (!result.data?.user) {
+        console.error("[Login] No user in response");
+        toast.error("Login failed - no user data received");
+        return;
+      }
+
+      console.log("[Login] Login successful, preparing redirect");
+      toast.success("Login successful");
+
+      // Get redirect URL
       const callbackUrl = searchParams.get("callbackUrl");
       const redirectTo = callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
-      router.push(redirectTo);
-      router.refresh();
-    } catch {
+      
+      console.log("[Login] Redirect to:", redirectTo);
+
+      // Wait a bit for cookies to be set, then redirect using window.location for reliability
+      setTimeout(() => {
+        console.log("[Login] Executing redirect");
+        window.location.href = redirectTo;
+      }, 500);
+
+    } catch (error) {
+      console.error("[Login] Exception:", error);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
