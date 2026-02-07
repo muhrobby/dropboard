@@ -35,11 +35,14 @@ export async function middleware(request: NextRequest) {
     (path) => pathname === path || pathname.startsWith(path + "/")
   );
 
+  /*
+  // Temporarily disabled for debugging ERR_FAILED loop
   if (isProtectedPath && !hasToken) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
+  */
 
   // Auth routes - redirect to dashboard if already authenticated
   const authPaths = ["/login", "/register"];

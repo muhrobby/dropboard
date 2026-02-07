@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
 
   // Disable powered by header
   poweredByHeader: false,
+  
+  // Disable react strict mode to prevent double-effect invocation
+  reactStrictMode: false,
 
   /**
    * Security Headers
