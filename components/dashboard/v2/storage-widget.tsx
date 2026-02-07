@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Label, Pie, PieChart } from "recharts";
+import { Label, Pie, PieChart, ResponsiveContainer, Cell } from "recharts";
 import { useWorkspaceStore } from "@/stores/workspace-store";
 import { FREE_STORAGE_LIMIT_BYTES } from "@/lib/constants";
 import { formatBytes } from "@/lib/utils";
@@ -23,14 +23,18 @@ import {
 export function StorageWidget() {
   const workspace = useWorkspaceStore((s) => s.getActiveWorkspace());
   const storageUsed = workspace?.storageUsedBytes ?? 0;
-  const storageLimit = FREE_STORAGE_LIMIT_BYTES; // Or dynamic limit if available
+  const storageLimit = FREE_STORAGE_LIMIT_BYTES;
   const storageFree = Math.max(0, storageLimit - storageUsed);
+
+  // Explicit colors to avoid black chart issue
+  const USAGE_COLOR = "#2563EB"; // Blue-600
+  const FREE_COLOR = "#E5E7EB"; // Gray-200
 
   // Data for the chart
   const chartData = React.useMemo(
     () => [
-      { browser: "used", visitors: storageUsed, fill: "var(--color-used)" },
-      { browser: "free", visitors: storageFree, fill: "var(--color-free)" },
+      { name: "used", value: storageUsed, fill: USAGE_COLOR },
+      { name: "free", value: storageFree, fill: FREE_COLOR },
     ],
     [storageUsed, storageFree],
   );
@@ -41,11 +45,11 @@ export function StorageWidget() {
     },
     used: {
       label: "Used",
-      color: "hsl(var(--primary))",
+      color: USAGE_COLOR,
     },
     free: {
       label: "Free",
-      color: "hsl(var(--muted))",
+      color: FREE_COLOR,
     },
   } satisfies ChartConfig;
 
@@ -57,19 +61,21 @@ export function StorageWidget() {
     return formatBytes(storageUsed);
   }, [storageUsed]);
 
-  const percentUsed = Math.round((storageUsed / storageLimit) * 100);
+  // Handle division by zero
+  const percentUsed =
+    storageLimit > 0 ? Math.round((storageUsed / storageLimit) * 100) : 0;
 
   return (
-    <Card className="flex flex-col h-full">
+    <Card className="flex flex-col h-full overflow-hidden">
       <CardHeader className="items-center pb-0">
         <CardTitle>Storage Usage</CardTitle>
         <CardDescription>Current workspace</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 pb-0">
-        <div className="mx-auto aspect-square max-h-[250px]">
+      <CardContent className="flex-1 pb-0 min-h-[250px] relative">
+        <div className="absolute inset-0 flex items-center justify-center">
           <ChartContainer
             config={chartConfig}
-            className="mx-auto aspect-square max-h-[250px]"
+            className="mx-auto aspect-square h-[200px]"
           >
             <PieChart>
               <ChartTooltip
@@ -78,10 +84,11 @@ export function StorageWidget() {
               />
               <Pie
                 data={chartData}
-                dataKey="visitors"
-                nameKey="browser"
+                dataKey="value"
+                nameKey="name"
                 innerRadius={60}
-                strokeWidth={5}
+                outerRadius={80}
+                strokeWidth={0} // Remove stroke to prevent outline artifacts
               >
                 <Label
                   content={({ viewBox }) => {
@@ -112,16 +119,20 @@ export function StorageWidget() {
                     }
                   }}
                 />
+                {/* Add Cells explicitly for color control */}
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                ))}
               </Pie>
             </PieChart>
           </ChartContainer>
         </div>
       </CardContent>
-      <CardFooter className="flex-col gap-2 text-sm pt-4">
+      <CardFooter className="flex-col gap-2 text-sm pt-4 pb-6 z-10 bg-background/50 backdrop-blur-sm">
         <div className="flex items-center gap-2 font-medium leading-none">
           {usedSizeFormatted} used of {totalSizeFormatted}
         </div>
-        <div className="leading-none text-muted-foreground">
+        <div className="leading-none text-muted-foreground text-xs">
           Upgrade plan for more storage
         </div>
       </CardFooter>
