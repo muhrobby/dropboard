@@ -33,6 +33,9 @@ function isAllowedOrigin(origin: string | null): boolean {
 }
 
 const nextConfig: NextConfig = {
+  // Enable standalone output for Docker deployment
+  output: "standalone",
+
   /* config options here */
 
   /**
