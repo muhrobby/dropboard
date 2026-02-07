@@ -8,12 +8,13 @@ type SearchParams = {
   workspaceId: string;
   q: string;
   type?: ItemType;
+  tags?: string; // comma-separated
   page: number;
   limit: number;
 };
 
 export async function searchItems(params: SearchParams) {
-  const { workspaceId, q, type, page, limit } = params;
+  const { workspaceId, q, type, tags, page, limit } = params;
   const offset = (page - 1) * limit;
   const pattern = `%${q}%`;
 
@@ -24,12 +25,28 @@ export async function searchItems(params: SearchParams) {
     or(
       ilike(items.title, pattern),
       ilike(items.content, pattern),
-      ilike(items.note, pattern)
+      ilike(items.note, pattern),
     )!,
   ];
 
   if (type) {
     conditions.push(eq(items.type, type));
+  }
+
+  // Filter by tags (array overlap)
+  if (tags) {
+    const tagArray = tags
+      .split(",")
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean);
+    if (tagArray.length > 0) {
+      conditions.push(
+        sql`${items.tags} && ARRAY[${sql.join(
+          tagArray.map((t) => sql`${t}`),
+          sql`, `,
+        )}]::text[]`,
+      );
+    }
   }
 
   const where = and(...conditions);

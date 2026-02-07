@@ -1,35 +1,41 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/middleware/auth-guard";
 import { requireWorkspaceMembership } from "@/middleware/workspace-guard";
-import { searchItems } from "@/services/search-service";
-import { searchQuerySchema } from "@/lib/validations/search";
+import { listTrashItems } from "@/services/item-service";
 import {
+  successResponse,
   validationErrorResponse,
   serverErrorResponse,
+  forbiddenResponse,
+  unauthorizedResponse,
 } from "@/lib/api-helpers";
-import { AppError } from "@/lib/errors";
+import { AppError, ForbiddenError } from "@/lib/errors";
+import { z } from "zod/v4";
+
+const querySchema = z.object({
+  workspaceId: z.string().min(1),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
 
 export async function GET(request: NextRequest) {
   try {
     const session = await requireAuth();
     const { searchParams } = new URL(request.url);
 
-    const parsed = searchQuerySchema.safeParse({
-      q: searchParams.get("q"),
+    const parsed = querySchema.safeParse({
       workspaceId: searchParams.get("workspaceId"),
-      type: searchParams.get("type") || undefined,
-      tags: searchParams.get("tags") || undefined,
       page: searchParams.get("page") || 1,
       limit: searchParams.get("limit") || 20,
     });
 
     if (!parsed.success) {
-      return validationErrorResponse("Invalid search parameters");
+      return validationErrorResponse("Invalid parameters");
     }
 
     await requireWorkspaceMembership(session.user.id, parsed.data.workspaceId);
 
-    const result = await searchItems(parsed.data);
+    const result = await listTrashItems(parsed.data);
 
     return NextResponse.json({
       success: true,
@@ -37,9 +43,9 @@ export async function GET(request: NextRequest) {
       meta: result.meta,
     });
   } catch (error) {
-    if (error instanceof AppError) {
-      return serverErrorResponse(error.message);
-    }
+    if (error instanceof ForbiddenError)
+      return forbiddenResponse(error.message);
+    if (error instanceof AppError) return unauthorizedResponse(error.message);
     return serverErrorResponse("Internal server error");
   }
 }

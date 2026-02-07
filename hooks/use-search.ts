@@ -9,6 +9,7 @@ import type { ItemType } from "@/types";
 type SearchParams = {
   q: string;
   type?: ItemType;
+  tags?: string[]; // array of tags
   page?: number;
   limit?: number;
 };
@@ -20,12 +21,15 @@ type PaginatedSearchResults = {
 
 async function fetchSearchResults(
   workspaceId: string,
-  params: SearchParams
+  params: SearchParams,
 ): Promise<PaginatedSearchResults> {
   const searchParams = new URLSearchParams();
   searchParams.set("workspaceId", workspaceId);
   searchParams.set("q", params.q);
   if (params.type) searchParams.set("type", params.type);
+  if (params.tags && params.tags.length > 0) {
+    searchParams.set("tags", params.tags.join(","));
+  }
   if (params.page) searchParams.set("page", String(params.page));
   if (params.limit) searchParams.set("limit", String(params.limit));
 
@@ -55,7 +59,14 @@ export function useSearch(params: SearchParams) {
   const debouncedQuery = useDebounce(params.q, 300);
 
   return useQuery({
-    queryKey: ["search", activeWorkspaceId, debouncedQuery, params.type, params.page],
+    queryKey: [
+      "search",
+      activeWorkspaceId,
+      debouncedQuery,
+      params.type,
+      params.tags,
+      params.page,
+    ],
     queryFn: () =>
       fetchSearchResults(activeWorkspaceId!, {
         ...params,

@@ -21,6 +21,8 @@ import {
   Image as ImageIcon,
   FileText,
   Archive,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,12 +30,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { DropCard } from "@/components/drops/drop-card";
 import { UploadModal } from "@/components/drops/upload-modal";
+import { BatchActionBar } from "@/components/drops/batch-action-bar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useUIStore } from "@/stores/ui-store";
 import { useItems } from "@/hooks/use-items";
 import type { ItemResponse } from "@/types/api";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { formatBytes, getDaysRemaining } from "@/components/drops/drops-page-utils";
+import {
+  formatBytes,
+  getDaysRemaining,
+} from "@/components/drops/drops-page-utils";
 import { Input } from "@/components/ui/input";
 
 type ViewMode = "grid" | "list";
@@ -76,7 +83,9 @@ function buildDriveStructure(items: ItemResponse[]): {
 
   // Group items by folder
   for (const item of items) {
-    const folderMatch = item.title?.match(/^([^/]+?)(?:\/|\s\(\+\d+\s+more\))$/);
+    const folderMatch = item.title?.match(
+      /^([^/]+?)(?:\/|\s\(\+\d+\s+more\))$/,
+    );
     const folderName = folderMatch ? folderMatch[1] : null;
 
     if (folderName) {
@@ -99,7 +108,10 @@ function buildDriveStructure(items: ItemResponse[]): {
     const folder = folders.find((f) => f.name === folderName);
     if (folder) {
       folder.itemCount = folderItems.length;
-      folder.totalSize = folderItems.reduce((sum, item) => sum + (item.fileAsset?.sizeBytes || 0), 0);
+      folder.totalSize = folderItems.reduce(
+        (sum, item) => sum + (item.fileAsset?.sizeBytes || 0),
+        0,
+      );
     }
   }
 
@@ -128,7 +140,12 @@ function StatCard({
   return (
     <Card className="p-4 hover:shadow-md transition-shadow">
       <div className="flex items-center gap-4">
-        <div className={cn("flex items-center justify-center w-12 h-12 rounded-xl", bgColor)}>
+        <div
+          className={cn(
+            "flex items-center justify-center w-12 h-12 rounded-xl",
+            bgColor,
+          )}
+        >
           <Icon className={cn("w-6 h-6", color)} />
         </div>
         <div className="flex-1">
@@ -148,9 +165,11 @@ function getFileIcon(mimeType: string): React.ElementType {
   if (!mimeType) return File;
   if (mimeType.startsWith("image/")) return ImageIcon;
   if (mimeType === "application/pdf") return FileText;
-  if (mimeType.includes("word") || mimeType.includes("document")) return FileText;
+  if (mimeType.includes("word") || mimeType.includes("document"))
+    return FileText;
   if (mimeType.includes("sheet") || mimeType.includes("excel")) return FileText;
-  if (mimeType.includes("presentation") || mimeType.includes("powerpoint")) return FileText;
+  if (mimeType.includes("presentation") || mimeType.includes("powerpoint"))
+    return FileText;
   if (mimeType.includes("zip") || mimeType.includes("archive")) return Archive;
   if (mimeType.startsWith("text/")) return FileText;
   return File;
@@ -160,10 +179,14 @@ function getFileColor(mimeType: string): string {
   if (!mimeType) return "text-gray-500";
   if (mimeType.startsWith("image/")) return "text-purple-500";
   if (mimeType === "application/pdf") return "text-red-500";
-  if (mimeType.includes("sheet") || mimeType.includes("excel")) return "text-green-500";
-  if (mimeType.includes("word") || mimeType.includes("document")) return "text-blue-500";
-  if (mimeType.includes("presentation") || mimeType.includes("powerpoint")) return "text-orange-500";
-  if (mimeType.includes("zip") || mimeType.includes("archive")) return "text-yellow-600";
+  if (mimeType.includes("sheet") || mimeType.includes("excel"))
+    return "text-green-500";
+  if (mimeType.includes("word") || mimeType.includes("document"))
+    return "text-blue-500";
+  if (mimeType.includes("presentation") || mimeType.includes("powerpoint"))
+    return "text-orange-500";
+  if (mimeType.includes("zip") || mimeType.includes("archive"))
+    return "text-yellow-600";
   return "text-gray-500";
 }
 
@@ -178,12 +201,18 @@ export default function DropsPage() {
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([
     { name: "My Files", folderId: null },
   ]);
+  // Selection mode state
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const { data, isLoading } = useItems({ type: "drop" });
   const allItems = data?.data ?? [];
 
   // Build drive structure
-  const { folders, fileMap } = useMemo(() => buildDriveStructure(allItems), [allItems]);
+  const { folders, fileMap } = useMemo(
+    () => buildDriveStructure(allItems),
+    [allItems],
+  );
 
   // Get current content based on folder selection
   const currentFolders = useMemo(() => {
@@ -202,7 +231,9 @@ export default function DropsPage() {
       files = fileMap.get(currentFolder) ?? [];
     } else {
       // Show files not in any folder
-      files = allItems.filter((item) => !item.title?.match(/^([^/]+?)(?:\/|\s\(\+\d+\s+more\))$/));
+      files = allItems.filter(
+        (item) => !item.title?.match(/^([^/]+?)(?:\/|\s\(\+\d+\s+more\))$/),
+      );
     }
 
     // Apply filters
@@ -221,7 +252,7 @@ export default function DropsPage() {
     // Apply search
     if (searchQuery) {
       files = files.filter((item) =>
-        item.title?.toLowerCase().includes(searchQuery.toLowerCase())
+        item.title?.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
@@ -230,7 +261,9 @@ export default function DropsPage() {
       if (sortBy === "name") {
         return (a.title || "").localeCompare(b.title || "");
       } else if (sortBy === "date") {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
       } else if (sortBy === "size") {
         return (b.fileAsset?.sizeBytes || 0) - (a.fileAsset?.sizeBytes || 0);
       }
@@ -238,7 +271,15 @@ export default function DropsPage() {
     });
 
     return files;
-  }, [allItems, fileMap, currentFolder, filterTab, pinFilter, searchQuery, sortBy]);
+  }, [
+    allItems,
+    fileMap,
+    currentFolder,
+    filterTab,
+    pinFilter,
+    searchQuery,
+    sortBy,
+  ]);
 
   // Combine folders and files for display
   const driveItems: DriveItem[] = useMemo(() => {
@@ -293,7 +334,10 @@ export default function DropsPage() {
   // Calculate statistics
   const stats = useMemo(() => {
     const totalFiles = allItems.length;
-    const totalSize = allItems.reduce((sum, item) => sum + (item.fileAsset?.sizeBytes || 0), 0);
+    const totalSize = allItems.reduce(
+      (sum, item) => sum + (item.fileAsset?.sizeBytes || 0),
+      0,
+    );
     const totalImages = allItems.filter(isImageItem).length;
     const pinnedCount = allItems.filter((item) => item.isPinned).length;
     const folderCount = folders.length;
@@ -325,7 +369,7 @@ export default function DropsPage() {
   function handleFolderClick(folderId: string, folderName: string) {
     setCurrentFolder(folderId);
     setBreadcrumbs([...breadcrumbs, { name: folderName, folderId }]);
-  };
+  }
 
   // Handle breadcrumb click
   function handleBreadcrumbClick(index: number) {
@@ -335,7 +379,28 @@ export default function DropsPage() {
     const target = newBreadcrumbs[newBreadcrumbs.length - 1];
     setBreadcrumbs(newBreadcrumbs);
     setCurrentFolder(target.folderId);
-  };
+  }
+
+  // Selection helpers
+  function toggleSelection(id: string) {
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setSelectedIds(newSet);
+  }
+
+  function selectAll() {
+    const allFileIds = currentFiles.map((f) => f.id);
+    setSelectedIds(new Set(allFileIds));
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+    setSelectionMode(false);
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -349,24 +414,22 @@ export default function DropsPage() {
                 My Drive
               </h1>
             </div>
-            <Button onClick={() => setUploadModalOpen(true)} className="gap-2">
-              <Upload className="w-4 h-4" />
-              Upload
-            </Button>
           </div>
 
           {/* Breadcrumbs */}
           <nav className="flex items-center gap-1 text-sm">
             {breadcrumbs.map((crumb, index) => (
               <div key={index} className="flex items-center">
-                {index > 0 && <ChevronRight className="w-4 h-4 text-muted-foreground mx-1" />}
+                {index > 0 && (
+                  <ChevronRight className="w-4 h-4 text-muted-foreground mx-1" />
+                )}
                 <button
                   onClick={() => handleBreadcrumbClick(index)}
                   className={cn(
                     "hover:text-foreground transition-colors",
                     index === breadcrumbs.length - 1
                       ? "text-foreground font-medium"
-                      : "text-muted-foreground"
+                      : "text-muted-foreground",
                   )}
                 >
                   {crumb.name}
@@ -386,7 +449,10 @@ export default function DropsPage() {
                 className="pl-10"
               />
             </div>
-            <Tabs value={filterTab} onValueChange={(v) => setFilterTab(v as FilterTab)}>
+            <Tabs
+              value={filterTab}
+              onValueChange={(v) => setFilterTab(v as FilterTab)}
+            >
               <TabsList>
                 <TabsTrigger value="all">All</TabsTrigger>
                 <TabsTrigger value="images">Images</TabsTrigger>
@@ -423,7 +489,11 @@ export default function DropsPage() {
                 icon={Clock}
                 label="Expiring Soon"
                 value={stats.expiringSoon}
-                subtext={stats.expiringToday > 0 ? `${stats.expiringToday} today` : "Next 3 days"}
+                subtext={
+                  stats.expiringToday > 0
+                    ? `${stats.expiringToday} today`
+                    : "Next 3 days"
+                }
                 color="text-orange-500"
                 bgColor="bg-orange-500/10"
               />
@@ -447,10 +517,12 @@ export default function DropsPage() {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-orange-600 dark:text-orange-400">
-                    {stats.expiringToday} file{stats.expiringToday > 1 ? "s" : ""} expiring today!
+                    {stats.expiringToday} file
+                    {stats.expiringToday > 1 ? "s" : ""} expiring today!
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    These files will be automatically deleted. Pin them to keep permanently.
+                    These files will be automatically deleted. Pin them to keep
+                    permanently.
                   </p>
                 </div>
               </div>
@@ -459,11 +531,20 @@ export default function DropsPage() {
 
           {/* Toolbar */}
           {driveItems.length > 0 && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                {driveItems.length} item{driveItems.length !== 1 ? "s" : ""}
-              </p>
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-3">
+                {selectionMode && (
+                  <Button size="sm" variant="ghost" onClick={selectAll}>
+                    Select All ({currentFiles.length})
+                  </Button>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  {selectedIds.size > 0
+                    ? `${selectedIds.size} selected`
+                    : `${driveItems.length} item${driveItems.length !== 1 ? "s" : ""}`}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
                 <div className="flex items-center border rounded-lg">
                   <button
                     onClick={() => setViewMode("grid")}
@@ -471,7 +552,7 @@ export default function DropsPage() {
                       "p-2 transition-colors",
                       viewMode === "grid"
                         ? "bg-accent text-accent-foreground"
-                        : "hover:bg-accent/50"
+                        : "hover:bg-accent/50",
                     )}
                   >
                     <Grid3x3 className="w-4 h-4" />
@@ -482,7 +563,7 @@ export default function DropsPage() {
                       "p-2 transition-colors",
                       viewMode === "list"
                         ? "bg-accent text-accent-foreground"
-                        : "hover:bg-accent/50"
+                        : "hover:bg-accent/50",
                     )}
                   >
                     <List className="w-4 h-4" />
@@ -491,12 +572,32 @@ export default function DropsPage() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortBy)}
-                  className="text-sm border rounded-lg px-3 py-2 bg-background"
+                  className="text-sm border rounded-lg px-2 py-2 bg-background"
                 >
-                  <option value="date">Date modified</option>
+                  <option value="date">Date</option>
                   <option value="name">Name</option>
                   <option value="size">Size</option>
                 </select>
+                <Button
+                  variant={selectionMode ? "secondary" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    if (selectionMode) {
+                      clearSelection();
+                    } else {
+                      setSelectionMode(true);
+                    }
+                  }}
+                >
+                  <CheckSquare className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-1">
+                    {selectionMode ? "Cancel" : "Select"}
+                  </span>
+                </Button>
+                <Button onClick={() => setUploadModalOpen(true)} size="sm">
+                  <Upload className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-1">Upload</span>
+                </Button>
               </div>
             </div>
           )}
@@ -553,16 +654,65 @@ export default function DropsPage() {
                       <div className="aspect-square rounded-xl bg-muted/50 border-2 border-dashed border-muted-foreground/25 flex items-center justify-center hover:border-primary/50 hover:bg-primary/5 transition-all">
                         <Folder className="w-16 h-16 text-muted-foreground group-hover:text-primary transition-colors" />
                       </div>
-                      <p className="text-sm font-medium mt-2 truncate">{folder.name}</p>
+                      <p className="text-sm font-medium mt-2 truncate">
+                        {folder.name}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        {folder.itemCount} item{folder.itemCount !== 1 ? "s" : ""}
+                        {folder.itemCount} item
+                        {folder.itemCount !== 1 ? "s" : ""}
                       </p>
                     </button>
                   );
                 }
 
                 const item = driveItem.item!;
-                return <DropCard key={driveItem.id} item={item} />;
+                const isSelected = selectedIds.has(item.id);
+                return (
+                  <div key={driveItem.id} className="relative group">
+                    {selectionMode && (
+                      <div
+                        className={cn(
+                          "absolute top-2 right-2 z-10 cursor-pointer transition-opacity",
+                          isSelected
+                            ? "opacity-100"
+                            : "opacity-0 group-hover:opacity-100",
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSelection(item.id);
+                        }}
+                      >
+                        <div
+                          className={cn(
+                            "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
+                            isSelected
+                              ? "bg-primary border-primary text-primary-foreground"
+                              : "bg-background/80 border-muted-foreground/50 hover:border-primary",
+                          )}
+                        >
+                          {isSelected && (
+                            <Square className="w-3 h-3 fill-current" />
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    <div
+                      className={cn(
+                        "transition-all",
+                        selectionMode &&
+                          isSelected &&
+                          "ring-2 ring-primary rounded-xl",
+                      )}
+                      onClick={
+                        selectionMode
+                          ? () => toggleSelection(item.id)
+                          : undefined
+                      }
+                    >
+                      <DropCard item={item} />
+                    </div>
+                  </div>
+                );
               })}
             </div>
           )}
@@ -586,12 +736,16 @@ export default function DropsPage() {
                     return (
                       <button
                         key={driveItem.id}
-                        onClick={() => handleFolderClick(folder.id, folder.name)}
+                        onClick={() =>
+                          handleFolderClick(folder.id, folder.name)
+                        }
                         className="w-full grid grid-cols-12 gap-4 px-4 py-3 hover:bg-muted/50 transition-colors text-left"
                       >
                         <div className="col-span-6 flex items-center gap-3">
                           <Folder className="w-8 h-8 text-muted-foreground shrink-0" />
-                          <span className="truncate font-medium">{folder.name}</span>
+                          <span className="truncate font-medium">
+                            {folder.name}
+                          </span>
                         </div>
                         <div className="col-span-3 flex items-center text-sm text-muted-foreground">
                           {new Date(folder.createdAt).toLocaleDateString()}
@@ -608,7 +762,9 @@ export default function DropsPage() {
 
                   const item = driveItem.item!;
                   const FileIcon = getFileIcon(item.fileAsset?.mimeType || "");
-                  const iconColor = getFileColor(item.fileAsset?.mimeType || "");
+                  const iconColor = getFileColor(
+                    item.fileAsset?.mimeType || "",
+                  );
                   const fileSize = item.fileAsset?.sizeBytes || 0;
 
                   return (
@@ -645,6 +801,12 @@ export default function DropsPage() {
 
       {/* Upload Modal */}
       <UploadModal />
+
+      {/* Batch Action Bar */}
+      <BatchActionBar
+        selectedIds={Array.from(selectedIds)}
+        onClear={clearSelection}
+      />
     </div>
   );
 }

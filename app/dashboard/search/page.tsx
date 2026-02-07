@@ -9,11 +9,13 @@ import type { ItemType } from "@/types";
 export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<ItemType | undefined>();
+  const [tagsFilter, setTagsFilter] = useState<string[]>([]);
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useSearch({
     q: query,
     type: typeFilter,
+    tags: tagsFilter.length > 0 ? tagsFilter : undefined,
     page,
     limit: 20,
   });
@@ -28,6 +30,11 @@ export default function SearchPage() {
     setPage(1);
   }
 
+  function handleTagsFilterChange(tags: string[]) {
+    setTagsFilter(tags);
+    setPage(1);
+  }
+
   return (
     <div className="p-4 md:p-6 space-y-6">
       <div>
@@ -37,6 +44,8 @@ export default function SearchPage() {
           onQueryChange={handleQueryChange}
           typeFilter={typeFilter}
           onTypeFilterChange={handleTypeFilterChange}
+          tagsFilter={tagsFilter}
+          onTagsFilterChange={handleTagsFilterChange}
         />
       </div>
 

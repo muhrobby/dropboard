@@ -12,18 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { TagInput } from "@/components/shared/tag-input";
+import { RetentionSelector } from "./retention-selector";
 import { UploadDropzone } from "./upload-dropzone";
 import { useUIStore } from "@/stores/ui-store";
 import { useWorkspaceStore } from "@/stores/workspace-store";
 import { useUpload, useUploadMultiple } from "@/hooks/use-upload";
+import { usePinItem } from "@/hooks/use-items";
 import { toast } from "sonner";
 import {
   File,
@@ -47,6 +42,12 @@ export function UploadModal() {
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
   const uploadSingle = useUpload();
   const uploadMultiple = useUploadMultiple();
+  const pinItemMutation = usePinItem();
+
+  // Store last uploaded item ID for toast action
+  const [lastUploadedItemId, setLastUploadedItemId] = useState<string | null>(
+    null,
+  );
 
   const [files, setFiles] = useState<File[]>([]);
   const [isFolderMode, setIsFolderMode] = useState(false);
@@ -54,13 +55,20 @@ export function UploadModal() {
   const [note, setNote] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [retention, setRetention] = useState<"temporary" | "permanent">(
-    "temporary"
+    "temporary",
   );
 
   // Upload state untuk setiap file
   const [uploadStates, setUploadStates] = useState<
-    Record<string, { status: "pending" | "uploading" | "success" | "error"; progress: number; error?: string }
-  >>({});
+    Record<
+      string,
+      {
+        status: "pending" | "uploading" | "success" | "error";
+        progress: number;
+        error?: string;
+      }
+    >
+  >({});
 
   // Loading state saat proses file (setelah selesssi dipilih)
   const [isProcessing, setIsProcessing] = useState(false);
@@ -77,7 +85,11 @@ export function UploadModal() {
   }
 
   function handleClose() {
-    if (!uploadSingle.isUploading && !uploadMultiple.isUploading && !isProcessing) {
+    if (
+      !uploadSingle.isUploading &&
+      !uploadMultiple.isUploading &&
+      !isProcessing
+    ) {
       setOpen(false);
       reset();
     }
@@ -87,7 +99,7 @@ export function UploadModal() {
     setIsProcessing(true);
 
     // Simulate processing time untuk preview generation
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Initialize upload states
     const newStates: typeof uploadStates = {};
@@ -96,7 +108,7 @@ export function UploadModal() {
       newStates[fileId] = { status: "pending" as const, progress: 0 };
     }
 
-    setUploadStates(prev => ({ ...prev, ...newStates }));
+    setUploadStates((prev) => ({ ...prev, ...newStates }));
     setFiles(selectedFiles);
 
     // Auto-detect folder mode
@@ -125,7 +137,7 @@ export function UploadModal() {
     const file = files[index];
     if (file) {
       const fileId = `${file.name}-${file.size}`;
-      setUploadStates(prev => {
+      setUploadStates((prev) => {
         const updated = { ...prev };
         delete updated[fileId];
         return updated;
@@ -151,9 +163,9 @@ export function UploadModal() {
     const folderName = title || undefined;
 
     // Mark all as uploading
-    setUploadStates(prev => {
+    setUploadStates((prev) => {
       const updated = { ...prev };
-      files.forEach(file => {
+      files.forEach((file) => {
         const fileId = `${file.name}-${file.size}`;
         if (updated[fileId]) {
           updated[fileId] = { status: "uploading" as const, progress: 0 };
@@ -171,14 +183,14 @@ export function UploadModal() {
         const file = files[0];
         const fileId = `${file.name}-${file.size}`;
 
-        setUploadStates(prev => ({
+        setUploadStates((prev) => ({
           ...prev,
           [fileId]: { status: "uploading" as const, progress: 30 },
         }));
 
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
 
-        setUploadStates(prev => ({
+        setUploadStates((prev) => ({
           ...prev,
           [fileId]: { status: "uploading" as const, progress: 70 },
         }));
@@ -186,18 +198,17 @@ export function UploadModal() {
         await uploadSingle.mutateAsync({
           file,
           workspaceId: activeWorkspaceId,
-          title: isFolderMode ? undefined : (title || undefined),
+          title: isFolderMode ? undefined : title || undefined,
           note: note || undefined,
           tags: tags.length > 0 ? tags : undefined,
           isPinned: retention === "permanent",
         });
 
-        setUploadStates(prev => ({
+        setUploadStates((prev) => ({
           ...prev,
           [fileId]: { status: "success" as const, progress: 100 },
         }));
         successCount++;
-
       } else {
         // Multiple upload - gunakan batch folder name
         await uploadMultiple.mutateAsync({
@@ -210,9 +221,9 @@ export function UploadModal() {
         });
 
         // Update semua ke success
-        files.forEach(file => {
+        files.forEach((file) => {
           const fileId = `${file.name}-${file.size}`;
-          setUploadStates(prev => ({
+          setUploadStates((prev) => ({
             ...prev,
             [fileId]: { status: "success" as const, progress: 100 },
           }));
@@ -221,28 +232,50 @@ export function UploadModal() {
       }
     } catch (err) {
       // Mark semua sebagai error
-      files.forEach(file => {
+      files.forEach((file) => {
         const fileId = `${file.name}-${file.size}`;
-        setUploadStates(prev => ({
+        setUploadStates((prev) => ({
           ...prev,
-          [fileId]: { status: "error" as const, progress: 0, error: "Upload failed" },
+          [fileId]: {
+            status: "error" as const,
+            progress: 0,
+            error: "Upload failed",
+          },
         }));
       });
       errorCount = files.length;
     }
 
-    // Show summary toast
+    // Show summary toast with Pin Now action for temporary uploads
     if (successCount === files.length) {
       const message = isFolderMode
         ? `Folder "${folderName}" created with ${successCount} file${successCount > 1 ? "s" : ""}`
         : `${successCount} file${successCount > 1 ? "s" : ""} uploaded successfully`;
-      toast.success(message);
+
+      if (retention === "temporary" && lastUploadedItemId) {
+        toast.success(message, {
+          description: "Expires in 7 days",
+          action: {
+            label: "Pin Now",
+            onClick: () => {
+              pinItemMutation.mutate(lastUploadedItemId, {
+                onSuccess: () => toast.success("Item pinned!"),
+                onError: () => toast.error("Failed to pin item"),
+              });
+            },
+          },
+        });
+      } else {
+        toast.success(message);
+      }
     } else if (errorCount === files.length) {
       toast.error("All uploads failed");
     } else {
       toast.success(`${successCount} of ${files.length} files uploaded`);
       if (errorCount > 0) {
-        toast.error(`${errorCount} file${errorCount > 1 ? "s" : ""} failed to upload`);
+        toast.error(
+          `${errorCount} file${errorCount > 1 ? "s" : ""} failed to upload`,
+        );
       }
     }
 
@@ -261,10 +294,14 @@ export function UploadModal() {
   function getFileIcon(mimeType: string): React.ElementType {
     if (mimeType.startsWith("image/")) return ImageIcon;
     if (mimeType === "application/pdf") return FileText;
-    if (mimeType.includes("word") || mimeType.includes("document")) return FileText;
-    if (mimeType.includes("sheet") || mimeType.includes("excel")) return FileText;
-    if (mimeType.includes("presentation") || mimeType.includes("powerpoint")) return FileText;
-    if (mimeType.includes("zip") || mimeType.includes("archive")) return Archive;
+    if (mimeType.includes("word") || mimeType.includes("document"))
+      return FileText;
+    if (mimeType.includes("sheet") || mimeType.includes("excel"))
+      return FileText;
+    if (mimeType.includes("presentation") || mimeType.includes("powerpoint"))
+      return FileText;
+    if (mimeType.includes("zip") || mimeType.includes("archive"))
+      return Archive;
     if (mimeType.startsWith("text/")) return FileText;
     return File;
   }
@@ -272,15 +309,23 @@ export function UploadModal() {
   function getFileColor(mimeType: string): string {
     if (mimeType.startsWith("image/")) return "text-purple-500";
     if (mimeType === "application/pdf") return "text-red-500";
-    if (mimeType.includes("sheet") || mimeType.includes("excel")) return "text-green-500";
-    if (mimeType.includes("word") || mimeType.includes("document")) return "text-blue-500";
-    if (mimeType.includes("presentation") || mimeType.includes("powerpoint")) return "text-orange-500";
-    if (mimeType.includes("zip") || mimeType.includes("archive")) return "text-yellow-600";
+    if (mimeType.includes("sheet") || mimeType.includes("excel"))
+      return "text-green-500";
+    if (mimeType.includes("word") || mimeType.includes("document"))
+      return "text-blue-500";
+    if (mimeType.includes("presentation") || mimeType.includes("powerpoint"))
+      return "text-orange-500";
+    if (mimeType.includes("zip") || mimeType.includes("archive"))
+      return "text-yellow-600";
     return "text-gray-500";
   }
 
-  const isUploading = Object.values(uploadStates).some(s => s.status === "uploading");
-  const allComplete = Object.values(uploadStates).every(s => s.status === "success" || s.status === "error");
+  const isUploading = Object.values(uploadStates).some(
+    (s) => s.status === "uploading",
+  );
+  const allComplete = Object.values(uploadStates).every(
+    (s) => s.status === "success" || s.status === "error",
+  );
   const canUpload = files.length > 0 && !isUploading && !isProcessing;
 
   return (
@@ -290,7 +335,11 @@ export function UploadModal() {
           <DialogTitle>
             {files.length > 0 ? (
               <span className="flex items-center gap-2">
-                {isFolderMode ? <FolderOpen className="w-5 h-5" /> : <Upload className="w-5 h-5" />}
+                {isFolderMode ? (
+                  <FolderOpen className="w-5 h-5" />
+                ) : (
+                  <Upload className="w-5 h-5" />
+                )}
                 Upload {files.length} File{files.length > 1 ? "s" : ""}
               </span>
             ) : (
@@ -311,7 +360,9 @@ export function UploadModal() {
           {isProcessing && (
             <div className="flex items-center justify-center gap-3 p-4 rounded-xl bg-muted/50 animate-in fade-in">
               <Loader2 className="w-5 h-5 text-primary animate-spin" />
-              <span className="text-sm text-muted-foreground">Processing files...</span>
+              <span className="text-sm text-muted-foreground">
+                Processing files...
+              </span>
             </div>
           )}
 
@@ -322,7 +373,9 @@ export function UploadModal() {
                 <FolderOpen className="w-5 h-5 text-muted-foreground" />
                 <div className="text-sm">
                   <p className="font-medium">Create as folder</p>
-                  <p className="text-xs text-muted-foreground">Group files with a folder name</p>
+                  <p className="text-xs text-muted-foreground">
+                    Group files with a folder name
+                  </p>
                 </div>
               </div>
               <Switch
@@ -367,7 +420,10 @@ export function UploadModal() {
               <div className="space-y-2 max-h-[200px] overflow-y-auto">
                 {files.map((file, index) => {
                   const fileId = `${file.name}-${file.size}`;
-                  const state = uploadStates[fileId] || { status: "pending" as const, progress: 0 };
+                  const state = uploadStates[fileId] || {
+                    status: "pending" as const,
+                    progress: 0,
+                  };
                   const Icon = getFileIcon(file.type);
                   const iconColor = getFileColor(file.type);
 
@@ -378,7 +434,7 @@ export function UploadModal() {
                         "relative flex items-center gap-3 p-3 rounded-xl transition-all duration-200",
                         state.status === "uploading" && "bg-primary/5",
                         state.status === "success" && "bg-green-500/5",
-                        state.status === "error" && "bg-destructive/5"
+                        state.status === "error" && "bg-destructive/5",
                       )}
                     >
                       {/* File Icon */}
@@ -391,7 +447,9 @@ export function UploadModal() {
                       {/* File Info */}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm font-medium truncate">{file.name}</p>
+                          <p className="text-sm font-medium truncate">
+                            {file.name}
+                          </p>
                           {state.status === "success" && (
                             <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
                           )}
@@ -436,17 +494,19 @@ export function UploadModal() {
                       </div>
 
                       {/* Remove Button */}
-                      {!isUploading && !isProcessing && state.status === "pending" && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeFile(index);
-                          }}
-                          className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
+                      {!isUploading &&
+                        !isProcessing &&
+                        state.status === "pending" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeFile(index);
+                            }}
+                            className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
                     </div>
                   );
                 })}
@@ -488,27 +548,13 @@ export function UploadModal() {
           </div>
 
           {/* Retention */}
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label>Retention</Label>
-            <Select
+            <RetentionSelector
               value={retention}
-              onValueChange={(v) =>
-                setRetention(v as "temporary" | "permanent")
-              }
+              onChange={setRetention}
               disabled={isUploading}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="temporary">
-                  Temporary (7 days)
-                </SelectItem>
-                <SelectItem value="permanent">
-                  Permanent (pinned)
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            />
           </div>
         </div>
 
@@ -520,10 +566,7 @@ export function UploadModal() {
           >
             Cancel
           </Button>
-          <Button
-            onClick={handleUpload}
-            disabled={!canUpload || allComplete}
-          >
+          <Button onClick={handleUpload} disabled={!canUpload || allComplete}>
             {isUploading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

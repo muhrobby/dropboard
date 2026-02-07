@@ -8,6 +8,13 @@
       "when": 1770447129185,
       "tag": "0000_aberrant_harpoon",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770486113691,
+      "tag": "0001_free_salo",
+      "breakpoints": true
     }
   ]
 }

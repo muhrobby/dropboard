@@ -13,12 +13,7 @@ async function countPinnedItems(workspaceId: string): Promise<number> {
   const result = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(items)
-    .where(
-      and(
-        eq(items.workspaceId, workspaceId),
-        eq(items.isPinned, true)
-      )
-    );
+    .where(and(eq(items.workspaceId, workspaceId), eq(items.isPinned, true)));
   return result[0]?.count ?? 0;
 }
 
@@ -55,7 +50,7 @@ export async function createItem(data: CreateItemData) {
     const pinnedCount = await countPinnedItems(data.workspaceId);
     if (pinnedCount >= FREE_PINNED_LIMIT) {
       throw new QuotaExceededError(
-        `Pinned item limit reached (${FREE_PINNED_LIMIT}). Unpin some items to make room.`
+        `Pinned item limit reached (${FREE_PINNED_LIMIT}). Unpin some items to make room.`,
       );
     }
   }
@@ -100,6 +95,8 @@ export async function createItem(data: CreateItemData) {
 export async function listItems(filters: ListItemsFilters) {
   const conditions: SQL[] = [
     eq(items.workspaceId, filters.workspaceId),
+    // Exclude deleted items
+    isNull(items.deletedAt),
     // Exclude expired items
     sql`(${items.expiresAt} IS NULL OR ${items.expiresAt} > NOW())`,
   ];
@@ -184,7 +181,12 @@ export async function getItem(id: string) {
 
 export async function updateItem(
   id: string,
-  data: { title?: string; note?: string | null; content?: string; tags?: string[] }
+  data: {
+    title?: string;
+    note?: string | null;
+    content?: string;
+    tags?: string[];
+  },
 ) {
   // Verify exists
   await getItem(id);
@@ -203,8 +205,130 @@ export async function updateItem(
   return getItem(id);
 }
 
-export async function deleteItem(id: string) {
+export async function deleteItem(id: string, actorId?: string) {
   const item = await getItem(id);
+
+  // Soft delete: set deletedAt timestamp
+  await db
+    .update(items)
+    .set({ deletedAt: new Date(), updatedAt: new Date() })
+    .where(eq(items.id, id));
+
+  logActivity({
+    workspaceId: item.workspaceId,
+    actorId: actorId || item.createdBy,
+    action: "ITEM_DELETED",
+    targetType: item.type,
+    targetId: id,
+    metadata: { title: item.title },
+  });
+}
+
+export async function restoreItem(id: string, actorId?: string) {
+  // Get item including deleted ones
+  const result = await db
+    .select({ item: items, fileAsset: fileAssets })
+    .from(items)
+    .leftJoin(fileAssets, eq(items.fileAssetId, fileAssets.id))
+    .where(eq(items.id, id))
+    .limit(1);
+
+  if (result.length === 0) {
+    throw new NotFoundError("Item not found");
+  }
+
+  const item = result[0].item;
+
+  if (!item.deletedAt) {
+    throw new NotFoundError("Item is not in trash");
+  }
+
+  // Restore: clear deletedAt
+  await db
+    .update(items)
+    .set({ deletedAt: null, updatedAt: new Date() })
+    .where(eq(items.id, id));
+
+  logActivity({
+    workspaceId: item.workspaceId,
+    actorId: actorId || item.createdBy,
+    action: "ITEM_CREATED", // Using ITEM_CREATED as "restored" event
+    targetType: item.type,
+    targetId: id,
+    metadata: { title: item.title, restored: true },
+  });
+
+  return getItem(id);
+}
+
+export async function listTrashItems(filters: {
+  workspaceId: string;
+  page: number;
+  limit: number;
+}) {
+  const offset = (filters.page - 1) * filters.limit;
+
+  const [data, countResult] = await Promise.all([
+    db
+      .select({ item: items, fileAsset: fileAssets })
+      .from(items)
+      .leftJoin(fileAssets, eq(items.fileAssetId, fileAssets.id))
+      .where(
+        and(
+          eq(items.workspaceId, filters.workspaceId),
+          sql`${items.deletedAt} IS NOT NULL`,
+        ),
+      )
+      .orderBy(desc(items.deletedAt))
+      .limit(filters.limit)
+      .offset(offset),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(items)
+      .where(
+        and(
+          eq(items.workspaceId, filters.workspaceId),
+          sql`${items.deletedAt} IS NOT NULL`,
+        ),
+      ),
+  ]);
+
+  const total = countResult[0]?.count ?? 0;
+
+  const itemsWithUrls = data.map((row) => ({
+    ...row.item,
+    fileAsset: row.fileAsset
+      ? {
+          ...row.fileAsset,
+          downloadUrl: buildSignedUrl(row.fileAsset.id),
+        }
+      : null,
+  }));
+
+  return {
+    data: itemsWithUrls,
+    meta: {
+      page: filters.page,
+      limit: filters.limit,
+      total,
+    },
+  };
+}
+
+export async function permanentDeleteItem(id: string) {
+  // Get item including deleted ones
+  const result = await db
+    .select({ item: items, fileAsset: fileAssets })
+    .from(items)
+    .leftJoin(fileAssets, eq(items.fileAssetId, fileAssets.id))
+    .where(eq(items.id, id))
+    .limit(1);
+
+  if (result.length === 0) {
+    throw new NotFoundError("Item not found");
+  }
+
+  const item = result[0];
 
   // Delete associated file asset and file from disk
   if (item.fileAsset) {
@@ -213,15 +337,6 @@ export async function deleteItem(id: string) {
   }
 
   await db.delete(items).where(eq(items.id, id));
-
-  logActivity({
-    workspaceId: item.workspaceId,
-    actorId: item.createdBy,
-    action: "ITEM_DELETED",
-    targetType: item.type,
-    targetId: id,
-    metadata: { title: item.title },
-  });
 }
 
 export async function pinItem(id: string) {
@@ -232,7 +347,7 @@ export async function pinItem(id: string) {
     const pinnedCount = await countPinnedItems(item.workspaceId);
     if (pinnedCount >= FREE_PINNED_LIMIT) {
       throw new QuotaExceededError(
-        `Pinned item limit reached (${FREE_PINNED_LIMIT}). Unpin some items to make room.`
+        `Pinned item limit reached (${FREE_PINNED_LIMIT}). Unpin some items to make room.`,
       );
     }
   }
