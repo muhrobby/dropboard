@@ -71,8 +71,13 @@ export function ActivityChart() {
                 tickFormatter={(value) => value.slice(0, 3)}
               />
               <ChartTooltip
-                cursor={{ fill: "rgba(0,0,0,0.05)" }}
-                content={<ChartTooltipContent hideLabel />}
+                cursor={{ fill: "transparent" }} // Fix: Make hover cursor transparent
+                content={
+                  <ChartTooltipContent
+                    hideLabel
+                    className="bg-popover text-popover-foreground shadow-xl border border-border" // Ensure visibility
+                  />
+                }
               />
               <Bar
                 dataKey="activity"

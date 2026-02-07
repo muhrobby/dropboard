@@ -79,8 +79,13 @@ export function StorageWidget() {
           >
             <PieChart>
               <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel />}
+                cursor={false} // Pie chart usually doesn't need cursor, or transparency
+                content={
+                  <ChartTooltipContent
+                    hideLabel
+                    className="bg-popover text-popover-foreground shadow-xl border border-border"
+                  />
+                }
               />
               <Pie
                 data={chartData}
