@@ -40,8 +40,8 @@ docker-compose ps
 
 ### 4. Access the Application
 
-- Application: http://localhost:3000
-- API Health Check: http://localhost:3000/api/health
+- Application: http://localhost:3004
+- API Health Check: http://localhost:3004/api/health
 
 ## Docker Commands
 
@@ -116,11 +116,11 @@ To adjust these limits, edit the `deploy.resources` section in `docker-compose.y
 | `POSTGRES_PASSWORD` | Database password | `dropboard` |
 | `POSTGRES_DB` | Database name | `dropboard` |
 | `POSTGRES_PORT` | Database port | `5432` |
-| `APP_PORT` | Application port | `3000` |
-| `NEXT_PUBLIC_APP_URL` | Application URL | `http://localhost:3000` |
+| `APP_PORT` | Application port | `3004` |
+| `NEXT_PUBLIC_APP_URL` | Application URL | `http://localhost:3004` |
 | `BETTER_AUTH_SECRET` | Auth secret key | **Required** |
-| `BETTER_AUTH_URL` | Auth URL | `http://localhost:3000` |
-| `NEXT_PUBLIC_ALLOWED_ORIGINS` | CORS allowed origins | `http://localhost:3000` |
+| `BETTER_AUTH_URL` | Auth URL | `http://localhost:3004` |
+| `NEXT_PUBLIC_ALLOWED_ORIGINS` | CORS allowed origins | `http://localhost:3004` |
 
 ## Production Deployment
 
@@ -162,7 +162,7 @@ server {
     ssl_certificate_key /path/to/key.pem;
 
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:3004;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -206,7 +206,7 @@ docker-compose up -d
 docker-compose logs app
 
 # Check if port is in use
-netstat -tlnp | grep 3000
+netstat -tlnp | grep 3004
 ```
 
 ### Database Connection Issues
@@ -234,7 +234,7 @@ docker-compose up -d --build
 The application includes a health check endpoint:
 
 ```bash
-curl http://localhost:3000/api/health
+curl http://localhost:3004/api/health
 ```
 
 Response:
