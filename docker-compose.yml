@@ -44,13 +44,6 @@ services:
     networks:
       - prod_net
 
-    # Traefik labels (dokploy usually adds these automatically)
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dropboard.rule=Host(`drop.humalab.my.id`)"
-      - "traefik.http.routers.dropboard.entrypoints=https"
-      - "traefik.http.services.dropboard.loadbalancer.server.port=3004"
-
 networks:
   prod_net:
     external: true
