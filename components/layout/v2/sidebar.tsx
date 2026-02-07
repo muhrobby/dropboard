@@ -46,7 +46,11 @@ const navGroups: NavGroup[] = [
   {
     label: "Manage",
     items: [
-      { href: "/dashboard-v2/team", label: "Team Members", icon: Users },
+      {
+        href: "/dashboard-v2/settings/team",
+        label: "Team Members",
+        icon: Users,
+      },
       { href: "/dashboard-v2/settings", label: "Settings", icon: Settings },
     ],
   },

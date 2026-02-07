@@ -193,7 +193,7 @@ export function TeamList() {
               <TableBody>
                 {invites.map((invite) => (
                   <TableRow key={invite.id}>
-                    <TableCell>{invite.email}</TableCell>
+                    <TableCell>{invite.targetIdentifier}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{invite.role}</Badge>
                     </TableCell>
