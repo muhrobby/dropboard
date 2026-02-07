@@ -6,14 +6,24 @@ import { useEffect } from "react";
 import type { ApiResponse, WorkspaceResponse } from "@/types/api";
 
 async function fetchWorkspaces(): Promise<WorkspaceResponse[]> {
-  const res = await fetch("/api/v1/workspaces");
-  const json: ApiResponse<WorkspaceResponse[]> = await res.json();
-  if (!json.success) {
-    throw new Error(
-      "error" in json ? json.error.message : "Failed to fetch workspaces"
-    );
+  try {
+    const res = await fetch("/api/v1/workspaces");
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    const json: ApiResponse<WorkspaceResponse[]> = await res.json();
+    if (!json.success) {
+      throw new Error(
+        "error" in json ? json.error.message : "Failed to fetch workspaces"
+      );
+    }
+    return json.data;
+  } catch (error) {
+    console.error("fetchWorkspaces error:", error);
+    throw error;
   }
-  return json.data;
 }
 
 async function createWorkspace(name: string): Promise<WorkspaceResponse> {
