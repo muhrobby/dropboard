@@ -13,7 +13,6 @@ import {
   Image as ImageIcon,
   FileText,
   Archive,
-  MoreHorizontal,
   Calendar,
   Activity,
   BarChart3,
@@ -25,7 +24,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useItems } from "@/hooks/use-items";
 import { useMembers } from "@/hooks/use-members";
-import { useDashboardStats } from "@/hooks/use-dashboard";
 import { formatBytes } from "@/components/drops/drops-page-utils";
 
 // Format tanggal untuk trend chart
@@ -156,7 +154,6 @@ function TrendChart({
   labels: string[];
 }) {
   const maxValue = Math.max(...data, 1);
-  const minValue = Math.min(...data, 0);
 
   return (
     <div className="flex items-end justify-between gap-1 h-24">
@@ -207,7 +204,7 @@ export default function DashboardPage() {
   const links = linksData?.data ?? [];
   const notes = notesData?.data ?? [];
   const members = membersData ?? [];
-  const invites: never[] = []; // Invites tidak tersedia di useMembers, butuh useInvites terpisah
+  const invites: never[] = [];
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -235,7 +232,7 @@ export default function DashboardPage() {
     });
 
     const memberCount = members.length;
-    const pendingInvites = 0; // TODO: fetch dari useInvites
+    const pendingInvites = 0;
 
     // File types
     const fileTypes = {

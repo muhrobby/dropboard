@@ -16,7 +16,7 @@ import { WorkspaceSwitcher } from "./workspace-switcher";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard, isRoot: true },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, isRoot: false },
   { href: "/drops", label: "Drops", icon: ImageDown },
   { href: "/pinboard", label: "Pinboard", icon: Bookmark },
   { href: "/search", label: "Search", icon: Search },
@@ -43,9 +43,9 @@ export function AppSidebar() {
       <ScrollArea className="flex-1 px-3">
         <nav className="space-y-1">
           {navItems.map((item) => {
-            const isActive = item.isRoot
-              ? (pathname === "/" || pathname === "")
-              : (pathname === item.href || pathname.startsWith(item.href + "/"));
+            const isActive =
+              pathname === item.href ||
+              pathname.startsWith(item.href + "/");
             return (
               <Link
                 key={item.href}

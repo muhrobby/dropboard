@@ -22,6 +22,7 @@ export async function middleware(request: NextRequest) {
 
   // Protected routes - redirect to login if not authenticated
   const protectedPaths = [
+    "/dashboard",
     "/drops",
     "/pinboard",
     "/search",
@@ -40,18 +41,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Auth routes - redirect to drops if already authenticated
+  // Auth routes - redirect to dashboard if already authenticated
   const authPaths = ["/login", "/register"];
   const isAuthPath = authPaths.some((path) => pathname === path);
 
   if (isAuthPath && hasToken) {
-    return NextResponse.redirect(new URL("/drops", request.url));
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   // Root path - redirect based on auth
   if (pathname === "/") {
     if (hasToken) {
-      return NextResponse.redirect(new URL("/drops", request.url));
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
     return NextResponse.redirect(new URL("/login", request.url));
   }
@@ -64,6 +65,7 @@ export const config = {
     "/",
     "/login",
     "/register",
+    "/dashboard/:path*",
     "/drops/:path*",
     "/pinboard/:path*",
     "/search/:path*",

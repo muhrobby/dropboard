@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Dropboard",
     description:
       "Drop files, save links, take notes. Quick capture for your team.",
-    start_url: "/drops",
+    start_url: "/dashboard",
     display: "standalone",
     background_color: "#ffffff",
     theme_color: "#09090b",
