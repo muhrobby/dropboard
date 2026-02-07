@@ -51,8 +51,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Set permissions
 USER nextjs
 
+# Expose port (default 3000, can be overridden with PORT env var)
 EXPOSE 3000
 
+# Default to port 3000, but allow override via environment variable
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
