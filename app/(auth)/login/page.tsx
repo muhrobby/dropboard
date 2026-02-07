@@ -29,17 +29,14 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
-      console.log("[Login] Starting login for:", email);
+
       
       const result = await signIn.email({
         email,
         password,
       });
 
-      console.log("[Login] Response:", { 
-        hasError: !!result.error, 
-        hasUser: !!result.data?.user
-      });
+
 
       if (result.error) {
         console.error("[Login] Error:", result.error);
@@ -54,18 +51,18 @@ function LoginForm() {
         return;
       }
 
-      console.log("[Login] Login successful, preparing redirect");
+
       toast.success("Login successful");
 
       // Get redirect URL
       const callbackUrl = searchParams.get("callbackUrl");
       const redirectTo = callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
       
-      console.log("[Login] Redirect to:", redirectTo);
+
 
       // Wait a bit for cookies to be set, then redirect
       setTimeout(() => {
-        console.log("[Login] Executing redirect");
+
         router.refresh(); // Refresh to sync cookies
         router.push(redirectTo);
       }, 500);
