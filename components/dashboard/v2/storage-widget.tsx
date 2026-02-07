@@ -1,96 +1,130 @@
 "use client";
 
+import * as React from "react";
+import { Label, Pie, PieChart } from "recharts";
 import { useWorkspaceStore } from "@/stores/workspace-store";
 import { FREE_STORAGE_LIMIT_BYTES } from "@/lib/constants";
 import { formatBytes } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
 export function StorageWidget() {
   const workspace = useWorkspaceStore((s) => s.getActiveWorkspace());
-
   const storageUsed = workspace?.storageUsedBytes ?? 0;
-  const storagePercent = Math.min(
-    100,
-    Math.round((storageUsed / FREE_STORAGE_LIMIT_BYTES) * 100),
+  const storageLimit = FREE_STORAGE_LIMIT_BYTES; // Or dynamic limit if available
+  const storageFree = Math.max(0, storageLimit - storageUsed);
+
+  // Data for the chart
+  const chartData = React.useMemo(
+    () => [
+      { browser: "used", visitors: storageUsed, fill: "var(--color-used)" },
+      { browser: "free", visitors: storageFree, fill: "var(--color-free)" },
+    ],
+    [storageUsed, storageFree],
   );
 
-  // Calculate circumference for SVG circle
-  const radius = 70;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset =
-    circumference - (storagePercent / 100) * circumference;
+  const chartConfig = {
+    visitors: {
+      label: "Storage",
+    },
+    used: {
+      label: "Used",
+      color: "hsl(var(--primary))",
+    },
+    free: {
+      label: "Free",
+      color: "hsl(var(--muted))",
+    },
+  } satisfies ChartConfig;
 
-  const colorClass =
-    storagePercent > 90
-      ? "text-destructive"
-      : storagePercent > 75
-        ? "text-yellow-500"
-        : "text-primary";
+  const totalSizeFormatted = React.useMemo(() => {
+    return formatBytes(storageLimit, 0);
+  }, [storageLimit]);
+
+  const usedSizeFormatted = React.useMemo(() => {
+    return formatBytes(storageUsed);
+  }, [storageUsed]);
+
+  const percentUsed = Math.round((storageUsed / storageLimit) * 100);
 
   return (
-    <Card className="col-span-1 h-full">
-      <CardHeader>
-        <CardTitle className="text-base font-medium">Storage Usage</CardTitle>
+    <Card className="flex flex-col h-full">
+      <CardHeader className="items-center pb-0">
+        <CardTitle>Storage Usage</CardTitle>
+        <CardDescription>Current workspace</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col items-center justify-center pt-2">
-        <div className="relative h-48 w-48 flex items-center justify-center">
-          {/* Background Circle */}
-          <svg
-            className="h-full w-full -rotate-90 transform"
-            viewBox="0 0 160 160"
+      <CardContent className="flex-1 pb-0">
+        <div className="mx-auto aspect-square max-h-[250px]">
+          <ChartContainer
+            config={chartConfig}
+            className="mx-auto aspect-square max-h-[250px]"
           >
-            <circle
-              cx="80"
-              cy="80"
-              r={radius}
-              fill="transparent"
-              stroke="currentColor"
-              strokeWidth="12"
-              className="text-muted/20"
-            />
-            {/* Progress Circle */}
-            <circle
-              cx="80"
-              cy="80"
-              r={radius}
-              fill="transparent"
-              stroke="currentColor"
-              strokeWidth="12"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round"
-              className={`transition-all duration-1000 ease-out ${colorClass}`}
-            />
-          </svg>
-
-          {/* Center Text */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className={`text-4xl font-bold ${colorClass}`}>
-              {storagePercent}%
-            </span>
-            <span className="text-xs text-muted-foreground uppercase tracking-wide mt-1">
-              Used
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-4 text-center space-y-1">
-          <p className="text-sm font-medium">
-            {formatBytes(storageUsed)} of{" "}
-            {formatBytes(FREE_STORAGE_LIMIT_BYTES)}
-          </p>
-          <div className="text-xs text-muted-foreground flex gap-4 justify-center mt-2">
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-primary" />
-              <span>Files</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-muted" />
-              <span>Free</span>
-            </div>
-          </div>
+            <PieChart>
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent hideLabel />}
+              />
+              <Pie
+                data={chartData}
+                dataKey="visitors"
+                nameKey="browser"
+                innerRadius={60}
+                strokeWidth={5}
+              >
+                <Label
+                  content={({ viewBox }) => {
+                    if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                      return (
+                        <text
+                          x={viewBox.cx}
+                          y={viewBox.cy}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                        >
+                          <tspan
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            className="fill-foreground text-3xl font-bold"
+                          >
+                            {percentUsed}%
+                          </tspan>
+                          <tspan
+                            x={viewBox.cx}
+                            y={(viewBox.cy || 0) + 24}
+                            className="fill-muted-foreground text-xs"
+                          >
+                            Used
+                          </tspan>
+                        </text>
+                      );
+                    }
+                  }}
+                />
+              </Pie>
+            </PieChart>
+          </ChartContainer>
         </div>
       </CardContent>
+      <CardFooter className="flex-col gap-2 text-sm pt-4">
+        <div className="flex items-center gap-2 font-medium leading-none">
+          {usedSizeFormatted} used of {totalSizeFormatted}
+        </div>
+        <div className="leading-none text-muted-foreground">
+          Upgrade plan for more storage
+        </div>
+      </CardFooter>
     </Card>
   );
 }
