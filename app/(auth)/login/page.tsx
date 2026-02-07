@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { PasswordInput } from "@/components/auth/password-input";
 
 function LoginForm() {
   const router = useRouter();
@@ -29,46 +30,35 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
-
-      
       const result = await signIn.email({
         email,
         password,
       });
 
-
-
       if (result.error) {
-
         toast.error(result.error.message || "Login failed");
         return;
       }
 
       // Check if login actually succeeded
       if (!result.data?.user) {
-
         toast.error("Login failed - no user data received");
         return;
       }
-
 
       toast.success("Login successful");
 
       // Get redirect URL
       const callbackUrl = searchParams.get("callbackUrl");
       const redirectTo = callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
-      
-
 
       // Wait a bit for cookies to be set, then redirect
       setTimeout(() => {
-
         router.refresh(); // Refresh to sync cookies
         router.push(redirectTo);
       }, 500);
 
-    } catch (error) {
-
+    } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
@@ -76,7 +66,7 @@ function LoginForm() {
   }
 
   return (
-    <Card>
+    <Card className="w-full max-w-md">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold">Dropboard</CardTitle>
         <CardDescription>Sign in to your account</CardDescription>
@@ -98,15 +88,13 @@ function LoginForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={isLoading}
-              minLength={12}
               autoComplete="current-password"
             />
           </div>

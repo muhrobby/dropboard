@@ -120,8 +120,13 @@ export async function cancelInvite(
   });
 }
 
-export async function acceptInvite(token: string, userId: string) {
+export async function acceptInvite(token: string, userId: string, userEmail: string) {
   const invite = await getInviteByToken(token);
+
+  // Security check: Ensure the accepting user's email matches the invited email
+  if (invite.targetIdentifier.toLowerCase() !== userEmail.toLowerCase()) {
+    throw new ForbiddenError("This invite was sent to a different email address");
+  }
 
   const existingMember = await db.query.workspaceMembers.findFirst({
     where: and(

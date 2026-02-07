@@ -16,6 +16,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { PasswordInput } from "@/components/auth/password-input";
+import { PasswordStrength } from "@/components/auth/password-strength";
 
 function RegisterForm() {
   const router = useRouter();
@@ -31,6 +33,18 @@ function RegisterForm() {
 
     if (password !== confirmPassword) {
       toast.error("Passwords do not match");
+      return;
+    }
+
+    // Validate password strength
+    const hasMinLength = password.length >= 12;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (!hasMinLength || !hasUppercase || !hasLowercase || !hasNumber || !hasSpecial) {
+      toast.error("Password tidak memenuhi syarat keamanan");
       return;
     }
 
@@ -67,7 +81,7 @@ function RegisterForm() {
   }
 
   return (
-    <Card>
+    <Card className="w-full max-w-md">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold">Dropboard</CardTitle>
         <CardDescription>Create your account</CardDescription>
@@ -102,29 +116,30 @@ function RegisterForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               placeholder="Min. 12 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={isLoading}
-              minLength={12}
               autoComplete="new-password"
+            />
+            <PasswordStrength
+              password={password}
+              confirmPassword={confirmPassword}
+              showConfirmation={confirmPassword.length > 0}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
+            <PasswordInput
               id="confirmPassword"
-              type="password"
               placeholder="Repeat your password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               disabled={isLoading}
-              minLength={12}
               autoComplete="new-password"
             />
           </div>

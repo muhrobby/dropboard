@@ -15,7 +15,8 @@ export async function POST(
 
     const invite = await getInviteByToken(token);
 
-    const member = await acceptInvite(token, session.user.id);
+    // Pass user email for security validation
+    const member = await acceptInvite(token, session.user.id, session.user.email);
 
     return createdResponse(member);
   } catch (error) {
