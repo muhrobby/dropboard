@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ServiceWorkerRegistrar } from "@/components/providers/sw-registrar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -31,11 +32,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <QueryProvider>
-          {children}
-          <Toaster richColors position="bottom-right" />
-          <ServiceWorkerRegistrar />
-        </QueryProvider>
+        <TooltipProvider>
+          <QueryProvider>
+            {children}
+            <Toaster richColors position="bottom-right" />
+            <ServiceWorkerRegistrar />
+          </QueryProvider>
+        </TooltipProvider>
       </body>
     </html>
   );
