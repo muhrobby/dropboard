@@ -63,10 +63,11 @@ function LoginForm() {
       
       console.log("[Login] Redirect to:", redirectTo);
 
-      // Wait a bit for cookies to be set, then redirect using window.location for reliability
+      // Wait a bit for cookies to be set, then redirect
       setTimeout(() => {
         console.log("[Login] Executing redirect");
-        window.location.href = redirectTo;
+        router.refresh(); // Refresh to sync cookies
+        router.push(redirectTo);
       }, 500);
 
     } catch (error) {
