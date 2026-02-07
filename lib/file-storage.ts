@@ -6,18 +6,18 @@ import { ulid } from "ulid";
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 
 // Security: SIGNED_URL_SECRET harus didefinisikan di environment variables
-// Jangan gunakan fallback default karena ini adalah critical security issue
-const SIGNED_URL_SECRET = (() => {
+// Lazy validation untuk menghindari error saat build time
+function getSIGNED_URL_SECRET(): string {
   const secret = process.env.SIGNED_URL_SECRET;
   if (!secret) {
     throw new Error(
       "SIGNED_URL_SECRET environment variable is required. " +
-      "Please set it in your .env.local file with a strong random value (min 32 chars). " +
+      "Please set it with a strong random value (min 32 chars). " +
       "Generate one with: openssl rand -base64 32"
     );
   }
   return secret;
-})();
+}
 
 /**
  * Validate workspace ID to prevent path traversal attacks.
@@ -126,7 +126,7 @@ export function generateSignedToken(
 ): { token: string; expires: number } {
   const expires = Math.floor(Date.now() / 1000) + expiresInSeconds;
   const data = `${fileAssetId}:${expires}`;
-  const token = createHmac("sha256", SIGNED_URL_SECRET)
+  const token = createHmac("sha256", getSIGNED_URL_SECRET())
     .update(data)
     .digest("hex");
 
@@ -147,7 +147,7 @@ export function verifySignedToken(
 
   // Verify HMAC
   const data = `${fileAssetId}:${expires}`;
-  const expectedToken = createHmac("sha256", SIGNED_URL_SECRET)
+  const expectedToken = createHmac("sha256", getSIGNED_URL_SECRET())
     .update(data)
     .digest("hex");
 
