@@ -1,15 +1,36 @@
 // Dropboard Service Worker
 // Cache-first for static assets, network-first for API calls
 
-const CACHE_NAME = "dropboard-v1";
-const STATIC_ASSETS = ["/", "/drops", "/pinboard", "/search"];
+const CACHE_NAME = "dropboard-v2";
+const STATIC_ASSETS = [
+  "/",
+  "/dashboard",
+  "/dashboard/drops",
+  "/dashboard/pinboard",
+  "/dashboard/search",
+  "/dashboard/team",
+  "/dashboard/activity",
+  "/dashboard/settings",
+  "/login",
+  "/register",
+];
 
-// Install: pre-cache static assets
+// Install: pre-cache static assets with error handling
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then((cache) => {
+        // Cache each asset individually, ignore failures for missing routes
+        return Promise.allSettled(
+          STATIC_ASSETS.map((url) =>
+            cache.add(url).catch((err) => {
+              // Silently ignore - route might not exist yet
+              console.debug("Failed to cache:", url, err);
+            })
+          )
+        );
+      })
       .then(() => self.skipWaiting())
   );
 });
@@ -20,7 +41,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== CACHE_NAME)
+          .filter((key) => key !== CACHE_NAME && key.startsWith("dropboard-"))
           .map((key) => caches.delete(key))
       )
     ).then(() => self.clients.claim())
@@ -34,6 +55,11 @@ self.addEventListener("fetch", (event) => {
 
   // Skip non-GET requests
   if (request.method !== "GET") return;
+
+  // Skip cross-origin requests (external scripts, fonts, etc)
+  if (url.origin !== self.location.origin) {
+    return;
+  }
 
   // Network-first for API routes
   if (url.pathname.startsWith("/api/")) {
@@ -50,14 +76,15 @@ self.addEventListener("fetch", (event) => {
         // Return cached version but also update cache in background
         fetch(request).then((response) => {
           if (response.ok) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, response));
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
           }
         }).catch(() => {});
         return cached;
       }
       return fetch(request).then((response) => {
-        // Only cache same-origin successful responses
-        if (response.ok && url.origin === self.location.origin) {
+        // Only cache successful same-origin responses
+        if (response.ok) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
         }
