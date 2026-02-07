@@ -73,7 +73,7 @@ export default function SettingsPage() {
       }
       await refetchWorkspaces();
       toast.success("Workspace deleted");
-      router.push("/drops");
+      router.push("/dashboard");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete");
     } finally {
@@ -183,7 +183,7 @@ export default function SettingsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => router.push("/team")}
+                onClick={() => router.push("/dashboard/team")}
               >
                 Manage Team
               </Button>

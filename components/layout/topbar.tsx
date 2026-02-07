@@ -52,7 +52,7 @@ export function Topbar() {
 
       {/* Search shortcut */}
       <Button variant="ghost" size="icon" asChild>
-        <Link href="/search">
+        <Link href="/dashboard/search">
           <Search className="h-5 w-5" />
           <span className="sr-only">Search</span>
         </Link>
@@ -78,7 +78,7 @@ export function Topbar() {
           </div>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link href="/settings">Settings</Link>
+            <Link href="/dashboard/settings">Settings</Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>

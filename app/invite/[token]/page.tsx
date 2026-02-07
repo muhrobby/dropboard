@@ -27,7 +27,7 @@ export default function AcceptInvitePage({
     try {
       await acceptInvite.mutateAsync(token);
       toast.success("You have joined the workspace!");
-      router.push("/drops");
+      router.push("/dashboard/drops");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to accept invite");
     }
@@ -131,7 +131,7 @@ export default function AcceptInvitePage({
             </Button>
             <Button
               variant="outline"
-              onClick={() => router.push("/drops")}
+              onClick={() => router.push("/dashboard/drops")}
             >
               Decline
             </Button>

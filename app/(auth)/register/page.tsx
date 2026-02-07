@@ -48,7 +48,7 @@ export default function RegisterPage() {
       }
 
       toast.success("Account created successfully!");
-      router.push("/drops");
+      router.push("/dashboard");
       router.refresh();
     } catch {
       toast.error("Something went wrong. Please try again.");

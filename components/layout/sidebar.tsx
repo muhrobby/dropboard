@@ -16,13 +16,13 @@ import { WorkspaceSwitcher } from "./workspace-switcher";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, isRoot: false },
-  { href: "/drops", label: "Drops", icon: ImageDown },
-  { href: "/pinboard", label: "Pinboard", icon: Bookmark },
-  { href: "/search", label: "Search", icon: Search },
-  { href: "/team", label: "Team", icon: Users },
-  { href: "/activity", label: "Activity", icon: Activity },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/drops", label: "Drops", icon: ImageDown },
+  { href: "/dashboard/pinboard", label: "Pinboard", icon: Bookmark },
+  { href: "/dashboard/search", label: "Search", icon: Search },
+  { href: "/dashboard/team", label: "Team", icon: Users },
+  { href: "/dashboard/activity", label: "Activity", icon: Activity },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -31,7 +31,7 @@ export function AppSidebar() {
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col md:border-r bg-sidebar">
       <div className="flex h-14 items-center border-b px-4">
-        <Link href="/drops" className="text-lg font-bold">
+        <Link href="/dashboard" className="text-lg font-bold">
           Dropboard
         </Link>
       </div>

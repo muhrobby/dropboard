@@ -23,12 +23,12 @@ export async function middleware(request: NextRequest) {
   // Protected routes - redirect to login if not authenticated
   const protectedPaths = [
     "/dashboard",
-    "/drops",
-    "/pinboard",
-    "/search",
-    "/team",
-    "/activity",
-    "/settings",
+    "/dashboard/drops",
+    "/dashboard/pinboard",
+    "/dashboard/search",
+    "/dashboard/team",
+    "/dashboard/activity",
+    "/dashboard/settings",
   ];
 
   const isProtectedPath = protectedPaths.some(
@@ -66,11 +66,5 @@ export const config = {
     "/login",
     "/register",
     "/dashboard/:path*",
-    "/drops/:path*",
-    "/pinboard/:path*",
-    "/search/:path*",
-    "/team/:path*",
-    "/activity/:path*",
-    "/settings/:path*",
   ],
 };

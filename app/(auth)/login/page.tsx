@@ -38,7 +38,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/drops");
+      router.push("/dashboard");
       router.refresh();
     } catch {
       toast.error("Something went wrong. Please try again.");
