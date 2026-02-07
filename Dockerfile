@@ -26,6 +26,14 @@ RUN npm install -g pnpm
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+# Build-time arguments for public environment variables
+ARG NEXT_PUBLIC_APP_URL
+ARG NEXT_PUBLIC_ALLOWED_ORIGINS
+
+# Set build-time environment variables
+ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+ENV NEXT_PUBLIC_ALLOWED_ORIGINS=${NEXT_PUBLIC_ALLOWED_ORIGINS}
+
 # Build the application
 RUN pnpm build
 
@@ -51,10 +59,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Set permissions
 USER nextjs
 
-# Expose port (default 3000, can be overridden with PORT env var)
+# Expose port
 EXPOSE 3004
 
-# Default to port 3000, but allow override via environment variable
+# Default port and hostname
 ENV PORT=3004
 ENV HOSTNAME="0.0.0.0"
 

@@ -39,23 +39,6 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
-          // Content-Security-Policy (CSP) - more permissive for reverse proxy
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self';",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https:;",
-              "style-src 'self' 'unsafe-inline' https:;",
-              "img-src 'self' data: blob: https: http:;",
-              "font-src 'self' data:;",
-              "connect-src 'self' https: http: ws: wss:;",
-              "media-src 'self' blob:;",
-              "worker-src 'self' blob:;",
-              "frame-ancestors 'none';",
-              "base-uri 'self';",
-              "form-action 'self';",
-            ].join(" "),
-          },
         ],
       },
     ];

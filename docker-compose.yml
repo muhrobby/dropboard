@@ -4,6 +4,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+        NEXT_PUBLIC_ALLOWED_ORIGINS: ${NEXT_PUBLIC_ALLOWED_ORIGINS}
     container_name: dropboard-app
     restart: unless-stopped
     ports:
@@ -12,9 +15,6 @@ services:
       # Database - External PostgreSQL
       DATABASE_URL: ${DATABASE_URL}
 
-      # App URL
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3004}
-
       # Auth
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3004}
@@ -22,8 +22,11 @@ services:
       # Node Environment
       NODE_ENV: production
 
-      # CORS
-      NEXT_PUBLIC_ALLOWED_ORIGINS: ${NEXT_PUBLIC_ALLOWED_ORIGINS:-http://localhost:3004}
+      # Cron secret
+      CRON_SECRET: ${CRON_SECRET}
+
+      # File upload
+      SIGNED_URL_SECRET: ${SIGNED_URL_SECRET}
 
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:3004/api/health"]
