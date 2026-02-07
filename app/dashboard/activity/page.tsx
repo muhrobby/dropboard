@@ -20,6 +20,8 @@ import {
   Zap,
   Users,
   FolderOpen,
+  Share2,
+  Link2Off,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ActivityAction } from "@/types";
@@ -37,6 +39,8 @@ const actionConfig: Record<
   INVITE_CANCELLED: { icon: MailX, label: "cancelled an invite", color: "text-gray-600" },
   MEMBER_ROLE_CHANGED: { icon: ShieldCheck, label: "changed a member's role", color: "text-blue-600" },
   MEMBER_REMOVED: { icon: UserMinus, label: "removed a member", color: "text-red-600" },
+  SHARE_CREATED: { icon: Share2, label: "shared an item", color: "text-cyan-600" },
+  SHARE_REVOKED: { icon: Link2Off, label: "revoked a share link", color: "text-gray-600" },
 };
 
 function getInitials(name: string) {

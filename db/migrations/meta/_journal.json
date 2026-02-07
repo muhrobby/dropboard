@@ -15,6 +15,13 @@
       "when": 1770486113691,
       "tag": "0001_free_salo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770491978022,
+      "tag": "0002_aspiring_thunderball",
+      "breakpoints": true
     }
   ]
 }

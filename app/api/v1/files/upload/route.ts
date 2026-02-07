@@ -1,9 +1,10 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/middleware/auth-guard";
 import { requireWorkspaceMembership } from "@/middleware/workspace-guard";
 import { uploadFile } from "@/services/file-service";
 import { createItem } from "@/services/item-service";
 import { createDropSchema } from "@/lib/validations/item";
+import { isOcrSupported, queueOcr } from "@/services/ocr-service";
 import {
   createdResponse,
   validationErrorResponse,
@@ -109,6 +110,14 @@ export async function POST(request: NextRequest) {
       fileAssetId: uploadResult.fileAssetId,
     });
 
+    // Queue OCR for supported image types
+    if (isOcrSupported(file.type)) {
+      // Fire and forget - don't block upload response
+      queueOcr(item.id).catch((err) => {
+        console.error("Failed to queue OCR:", err);
+      });
+    }
+
     return createdResponse(item);
   } catch (error) {
     if (error instanceof ValidationError) {
@@ -132,5 +141,3 @@ export async function POST(request: NextRequest) {
     return serverErrorResponse();
   }
 }
-
-import { NextResponse } from "next/server";

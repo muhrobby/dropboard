@@ -5,4 +5,6 @@ export * from "./file-assets";
 export * from "./invites";
 export * from "./activity-logs";
 export * from "./auth";
+export * from "./shares";
+export * from "./webhooks";
 export * from "./relations";

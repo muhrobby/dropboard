@@ -100,6 +100,7 @@ export type ItemResponse = {
   fileAssetId: string | null;
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string | null;
   fileAsset: FileAssetResponse | null;
 };
 

@@ -13,4 +13,6 @@ export type ActivityAction =
   | "INVITE_ACCEPTED"
   | "INVITE_CANCELLED"
   | "MEMBER_ROLE_CHANGED"
-  | "MEMBER_REMOVED";
+  | "MEMBER_REMOVED"
+  | "SHARE_CREATED"
+  | "SHARE_REVOKED";

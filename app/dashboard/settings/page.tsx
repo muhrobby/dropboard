@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
-import { Settings, HardDrive, Users, Trash2 } from "lucide-react";
+import { Settings, HardDrive, Users, Trash2, Webhook, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { FREE_STORAGE_LIMIT_BYTES } from "@/lib/constants";
 
@@ -91,6 +91,7 @@ export default function SettingsPage() {
   }
 
   const isOwner = workspace.role === "owner";
+  const isAdmin = workspace.role === "admin";
   const isTeam = workspace.type === "team";
 
   return (
@@ -165,6 +166,31 @@ export default function SettingsPage() {
           </p>
         </CardContent>
       </Card>
+
+      {/* Integrations - Webhooks */}
+      {(isOwner || isAdmin) && (
+        <Card
+          className="cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={() => router.push("/dashboard/settings/webhooks")}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Webhook className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Webhooks</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Connect to n8n, Zapier, or your own services
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Team Info */}
       {isTeam && (

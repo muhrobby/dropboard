@@ -10,6 +10,7 @@ import {
   FREE_STORAGE_LIMIT_BYTES,
 } from "@/lib/constants";
 import { validateFileMimeType, sanitizeFilename, FileValidationError } from "@/lib/file-validator";
+import { queueScan, isScanEnabled } from "@/services/virus-scan-service";
 
 type UploadResult = {
   fileAssetId: string;
@@ -94,6 +95,7 @@ export async function uploadFile(
       mimeType: detectedMimeType,
       sizeBytes: file.size,
       storagePath,
+      scanStatus: isScanEnabled() ? "pending" : null,
       createdAt: new Date(),
     });
 
@@ -113,6 +115,13 @@ export async function uploadFile(
       sizeBytes: file.size,
     };
   });
+
+  // Queue virus scan if enabled (fire and forget)
+  if (isScanEnabled()) {
+    queueScan(result.fileAssetId).catch((err) => {
+      console.error("Failed to queue virus scan:", err);
+    });
+  }
 
   return result;
 }

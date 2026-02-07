@@ -24,5 +24,9 @@ export const fileAssets = pgTable("file_assets", {
   mimeType: varchar("mime_type", { length: 100 }).notNull(),
   sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
   storagePath: text("storage_path").notNull(),
+  // Virus scan status: null = not scanned, pending, scanning, clean, infected, error
+  scanStatus: varchar("scan_status", { length: 20 }),
+  scanResult: text("scan_result"), // Details if infected or error
+  scannedAt: timestamp("scanned_at", { mode: "date", withTimezone: true }),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).notNull(),
 });

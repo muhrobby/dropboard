@@ -6,6 +6,7 @@ import { fileAssets } from "./file-assets";
 import { invites } from "./invites";
 import { activityLogs } from "./activity-logs";
 import { users, sessions, accounts, verifications } from "./auth";
+import { webhooks, webhookLogs } from "./webhooks";
 
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
@@ -15,6 +16,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   uploadedFileAssets: many(fileAssets, { relationName: "uploader" }),
   sentInvites: many(invites, { relationName: "inviter" }),
   activities: many(activityLogs, { relationName: "actor" }),
+  webhooks: many(webhooks, { relationName: "webhookCreator" }),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -41,6 +43,7 @@ export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
   fileAssets: many(fileAssets),
   invites: many(invites),
   activityLogs: many(activityLogs),
+  webhooks: many(webhooks),
 }));
 
 export const workspaceMembersRelations = relations(
@@ -102,5 +105,25 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   actor: one(users, {
     fields: [activityLogs.actorId],
     references: [users.id],
+  }),
+}));
+
+export const webhooksRelations = relations(webhooks, ({ one, many }) => ({
+  workspace: one(workspaces, {
+    fields: [webhooks.workspaceId],
+    references: [workspaces.id],
+  }),
+  creator: one(users, {
+    fields: [webhooks.createdBy],
+    references: [users.id],
+    relationName: "webhookCreator",
+  }),
+  logs: many(webhookLogs),
+}));
+
+export const webhookLogsRelations = relations(webhookLogs, ({ one }) => ({
+  webhook: one(webhooks, {
+    fields: [webhookLogs.webhookId],
+    references: [webhooks.id],
   }),
 }));

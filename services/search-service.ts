@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { items, fileAssets } from "@/db/schema";
-import { eq, and, desc, sql, ilike, or, type SQL } from "drizzle-orm";
+import { eq, and, desc, sql, ilike, or, isNull, type SQL } from "drizzle-orm";
 import { buildSignedUrl } from "@/lib/file-storage";
 import type { ItemType } from "@/types";
 
@@ -20,12 +20,16 @@ export async function searchItems(params: SearchParams) {
 
   const conditions: SQL[] = [
     eq(items.workspaceId, workspaceId),
+    // Exclude soft-deleted items
+    isNull(items.deletedAt),
     // Exclude expired items
     sql`(${items.expiresAt} IS NULL OR ${items.expiresAt} > NOW())`,
+    // Search in title, content, note, AND OCR text
     or(
       ilike(items.title, pattern),
       ilike(items.content, pattern),
       ilike(items.note, pattern),
+      ilike(items.ocrText, pattern), // Include OCR text in search
     )!,
   ];
 
@@ -79,6 +83,8 @@ export async function searchItems(params: SearchParams) {
           downloadUrl: buildSignedUrl(row.fileAsset.id),
         }
       : null,
+    // Include flag if match was from OCR
+    matchedViaOcr: row.item.ocrText?.toLowerCase().includes(q.toLowerCase()) || false,
   }));
 
   return {

@@ -33,6 +33,9 @@ export const items = pgTable(
     isPinned: boolean("is_pinned").notNull().default(false),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     fileAssetId: text("file_asset_id"),
+    // OCR extracted text for image files
+    ocrText: text("ocr_text"),
+    ocrStatus: varchar("ocr_status", { length: 20 }), // pending, completed, failed, null
     // Soft delete: null = active, timestamp = deleted
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
@@ -43,5 +46,6 @@ export const items = pgTable(
     index("idx_items_workspace_created").on(table.workspaceId, table.createdAt),
     index("idx_items_expires").on(table.expiresAt),
     index("idx_items_deleted").on(table.deletedAt),
+    index("idx_items_ocr_text").on(table.ocrText), // For text search
   ],
 );

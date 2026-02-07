@@ -3,6 +3,19 @@ import { activityLogs, users } from "@/db/schema";
 import { desc, eq, sql } from "drizzle-orm";
 import { ulid } from "ulid";
 import type { ActivityAction } from "@/types";
+import { triggerWebhooks } from "./webhook-service";
+import type { WebhookEvent } from "@/db/schema/webhooks";
+
+// Map activity actions to webhook events
+const ACTION_TO_WEBHOOK_EVENT: Record<string, WebhookEvent> = {
+  ITEM_CREATED: "item.created",
+  ITEM_DELETED: "item.deleted",
+  ITEM_PINNED: "item.pinned",
+  ITEM_UNPINNED: "item.unpinned",
+  SHARE_CREATED: "item.shared",
+  INVITE_ACCEPTED: "member.joined",
+  MEMBER_REMOVED: "member.removed",
+};
 
 export async function logActivity(data: {
   workspaceId: string;
@@ -23,6 +36,21 @@ export async function logActivity(data: {
       metadata: data.metadata || null,
       createdAt: new Date(),
     });
+
+    // Trigger webhooks for mapped events
+    const webhookEvent = ACTION_TO_WEBHOOK_EVENT[data.action];
+    if (webhookEvent) {
+      // Fire and forget - don't block activity logging
+      triggerWebhooks(data.workspaceId, webhookEvent, {
+        action: data.action,
+        targetType: data.targetType,
+        targetId: data.targetId,
+        actorId: data.actorId,
+        ...data.metadata,
+      }).catch((err) => {
+        console.error("Failed to trigger webhooks:", err);
+      });
+    }
   } catch (error) {
     console.error("Failed to log activity:", error);
   }

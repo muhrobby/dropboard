@@ -1,7 +1,8 @@
 // Dropboard Service Worker
 // Cache-first for static assets, network-first for API calls
+// With Share Target API support
 
-const CACHE_NAME = "dropboard-v2";
+const CACHE_NAME = "dropboard-v3";
 const STATIC_ASSETS = [
   "/",
   "/dashboard",
@@ -13,6 +14,7 @@ const STATIC_ASSETS = [
   "/dashboard/settings",
   "/login",
   "/register",
+  "/share-target",
 ];
 
 // Install: pre-cache static assets with error handling
@@ -48,10 +50,16 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Fetch: network-first for API, cache-first for static
+// Fetch: handle share target, network-first for API, cache-first for static
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
+
+  // Handle Share Target POST requests
+  if (request.method === "POST" && url.pathname === "/share-target") {
+    event.respondWith(handleShareTarget(request));
+    return;
+  }
 
   // Skip non-GET requests
   if (request.method !== "GET") return;
@@ -93,3 +101,51 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
+
+// Handle Share Target API
+async function handleShareTarget(request) {
+  try {
+    const formData = await request.formData();
+    
+    const title = formData.get("title") || "";
+    const text = formData.get("text") || "";
+    const url = formData.get("url") || "";
+    const files = formData.getAll("files");
+    
+    // Build redirect URL with params
+    const params = new URLSearchParams();
+    if (title) params.set("title", title);
+    if (text) params.set("text", text);
+    if (url) params.set("url", url);
+    
+    const redirectUrl = `/share-target?${params.toString()}`;
+    
+    // If files are shared, store them temporarily and include file info
+    if (files && files.length > 0 && files[0].size > 0) {
+      // Store files in IndexedDB for the page to retrieve
+      const fileData = await Promise.all(
+        files.map(async (file) => ({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          data: await file.arrayBuffer(),
+        }))
+      );
+      
+      // Use clients API to pass files to the page
+      const client = await self.clients.get(event.resultingClientId);
+      if (client) {
+        client.postMessage({
+          type: "SHARE_TARGET_FILES",
+          files: fileData,
+        });
+      }
+    }
+    
+    // Redirect to share-target page
+    return Response.redirect(redirectUrl, 303);
+  } catch (error) {
+    console.error("Share target error:", error);
+    return Response.redirect("/share-target?error=true", 303);
+  }
+}
