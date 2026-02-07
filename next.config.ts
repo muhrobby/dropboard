@@ -36,6 +36,12 @@ const nextConfig: NextConfig = {
   // Enable standalone output for Docker deployment
   output: "standalone",
 
+  // Trailing slash handling for compatibility
+  trailingSlash: false,
+
+  // Skip trailing slash redirect to avoid issues
+  skipTrailingSlashRedirect: false,
+
   /* config options here */
 
   /**
@@ -108,14 +114,16 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline';",
               // Style sources: self dan unsafe-inline untuk Tailwind/Next.js
               "style-src 'self' 'unsafe-inline';",
-              // Image sources: self, data URLs, dan blob URLs
-              "img-src 'self' data: blob: https:",
+              // Image sources: self, data URLs, blob URLs, dan any https
+              "img-src 'self' data: blob: https: http:",
               // Font sources: self dan data URLs
               "font-src 'self' data:;",
-              // Connect sources: self dan API endpoints
-              "connect-src 'self';",
+              // Connect sources: self dan same origin
+              "connect-src 'self' https: http:",
+              // Worker sources
+              "worker-src 'self' blob:",
               // Frame ancestors: mencegah iframe embedding
-              "frame-ancestors 'none';",
+              "frame-ancestors 'self';",
               // Base URI: restrict base tag
               "base-uri 'self';",
               // Form action: restrict form submissions
