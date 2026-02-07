@@ -12,7 +12,7 @@ Pengguna bisa memilih **Permanent** saat upload (tetap default **Temporary 7 har
 
 ---
 
-## Stack : Nextjs + Drizzle ORM + Posgress + Snadcn Registry
+## Stack : Nextjs + Drizzle ORM + Posgress + Shadcn Registry
 
 ## 1. Tujuan Produk
 
