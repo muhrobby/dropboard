@@ -1,8 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { readFile } from "fs/promises";
 import {
   isScanEnabled,
   getPendingScans,
+  getAvailableProvider,
+  scanFile,
+  scanFileWithClamAV,
 } from "@/services/virus-scan-service";
+import { getAbsolutePath } from "@/lib/file-storage";
 
 // Process pending virus scans
 // This endpoint should be called by a cron job
@@ -27,6 +32,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const provider = getAvailableProvider();
+
+    if (provider === "none") {
+      return NextResponse.json({
+        success: true,
+        message: "No scan provider configured. Set VIRUSTOTAL_API_KEY or CLAMAV_HOST/CLAMAV_SOCKET.",
+        processed: 0,
+      });
+    }
+
     // Get pending scans
     const pendingFiles = await getPendingScans(5);
 
@@ -38,13 +53,51 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Note: Actual scanning requires clamscan or VirusTotal API setup
-    // This endpoint returns the pending files for now
+    const results: Array<{
+      id: string;
+      name: string;
+      status: string;
+      result?: string;
+      error?: string;
+    }> = [];
+
+    for (const file of pendingFiles) {
+      try {
+        let scanResult;
+
+        if (provider === "clamav") {
+          // ClamAV uses file path directly
+          const filePath = getAbsolutePath(file.storagePath);
+          scanResult = await scanFileWithClamAV(file.id, filePath);
+        } else {
+          // VirusTotal needs the file buffer
+          const filePath = getAbsolutePath(file.storagePath);
+          const fileBuffer = await readFile(filePath);
+          scanResult = await scanFile(file.id, Buffer.from(fileBuffer), file.originalName);
+        }
+
+        results.push({
+          id: file.id,
+          name: file.originalName,
+          status: scanResult.status,
+          result: scanResult.result,
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        results.push({
+          id: file.id,
+          name: file.originalName,
+          status: "error",
+          error: errorMessage,
+        });
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      message: "Scan endpoint ready - configure VIRUS_SCAN_ENABLED and scanner",
-      pending: pendingFiles.length,
-      files: pendingFiles.map(f => ({ id: f.id, name: f.originalName })),
+      provider,
+      processed: results.length,
+      results,
     });
   } catch (error) {
     console.error("Scan cron error:", error);
@@ -73,6 +126,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       enabled: isScanEnabled(),
+      provider: getAvailableProvider(),
       queue: {
         pending: pendingFiles.length,
       },

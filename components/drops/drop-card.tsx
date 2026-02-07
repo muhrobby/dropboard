@@ -12,6 +12,12 @@ import {
   FileSpreadsheet,
   FileArchive,
   FileType,
+  Share2,
+  ScanEye,
+  ShieldCheck,
+  ShieldAlert,
+  ShieldQuestion,
+  Loader2,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,7 +28,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { RetentionBadge } from "./retention-badge";
+import { ShareDialog } from "./share-dialog";
 import { PinButton } from "@/components/shared/pin-button";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { usePinItem, useUnpinItem, useDeleteItem } from "@/hooks/use-items";
@@ -95,8 +108,74 @@ function getFileIconInfo(mimeType: string) {
   return { icon, color, bgColor };
 }
 
+function ScanStatusBadge({ status, result }: { status: string | null; result?: string | null }) {
+  if (!status || status === "skipped") return null;
+
+  const config: Record<string, { icon: React.ElementType; label: string; variant: "default" | "secondary" | "destructive" | "outline"; className: string }> = {
+    pending: { icon: ShieldQuestion, label: "Scan pending", variant: "outline", className: "text-muted-foreground" },
+    scanning: { icon: Loader2, label: "Scanning...", variant: "outline", className: "text-blue-500" },
+    clean: { icon: ShieldCheck, label: "Clean", variant: "outline", className: "text-green-600" },
+    infected: { icon: ShieldAlert, label: "Infected", variant: "destructive", className: "" },
+    error: { icon: ShieldQuestion, label: "Scan error", variant: "outline", className: "text-orange-500" },
+  };
+
+  const cfg = config[status];
+  if (!cfg) return null;
+
+  const Icon = cfg.icon;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Badge variant={cfg.variant} className={cn("gap-1 text-[10px] px-1.5 py-0", cfg.className)}>
+          <Icon className={cn("h-3 w-3", status === "scanning" && "animate-spin")} />
+          {cfg.label}
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent side="top">
+        <p className="text-xs">{result || cfg.label}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function OcrStatusBadge({ status, ocrText }: { status: string | null; ocrText: string | null }) {
+  if (!status) return null;
+
+  const config: Record<string, { label: string; className: string }> = {
+    pending: { label: "OCR pending", className: "text-muted-foreground" },
+    processing: { label: "OCR processing", className: "text-blue-500" },
+    completed: { label: "OCR done", className: "text-green-600" },
+    failed: { label: "OCR failed", className: "text-orange-500" },
+  };
+
+  const cfg = config[status];
+  if (!cfg) return null;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Badge variant="outline" className={cn("gap-1 text-[10px] px-1.5 py-0", cfg.className)}>
+          <ScanEye className={cn("h-3 w-3", status === "processing" && "animate-spin")} />
+          {cfg.label}
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs">
+        <p className="text-xs">
+          {status === "completed" && ocrText
+            ? ocrText.length > 200
+              ? ocrText.slice(0, 200) + "..."
+              : ocrText
+            : cfg.label}
+        </p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function DropCard({ item }: DropCardProps) {
   const [showDelete, setShowDelete] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const pinItem = usePinItem();
   const unpinItem = useUnpinItem();
   const deleteItem = useDeleteItem();
@@ -155,6 +234,21 @@ export function DropCard({ item }: DropCardProps) {
             </div>
           )}
 
+          {/* Scan/OCR status badges overlay */}
+          {(fileAsset?.scanStatus || item.ocrStatus) && (
+            <div className="absolute top-1.5 left-1.5 flex flex-col gap-1">
+              <ScanStatusBadge status={fileAsset?.scanStatus ?? null} result={fileAsset?.scanResult ?? null} />
+              <OcrStatusBadge status={item.ocrStatus} ocrText={item.ocrText} />
+            </div>
+          )}
+
+          {/* Infected overlay warning */}
+          {fileAsset?.scanStatus === "infected" && (
+            <div className="absolute inset-0 flex items-center justify-center bg-red-500/20 backdrop-blur-[1px]">
+              <ShieldAlert className="h-8 w-8 text-red-500" />
+            </div>
+          )}
+
           {/* Hover actions overlay */}
           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 backdrop-blur-sm">
             <PinButton
@@ -196,6 +290,10 @@ export function DropCard({ item }: DropCardProps) {
                   <Download className="mr-2 h-3.5 w-3.5" />
                   Download
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowShare(true)}>
+                  <Share2 className="mr-2 h-3.5 w-3.5" />
+                  Share
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={item.isPinned ? handleUnpin : handlePin}>
                   {item.isPinned ? "Unpin" : "Pin"}
                 </DropdownMenuItem>
@@ -229,6 +327,13 @@ export function DropCard({ item }: DropCardProps) {
         variant="destructive"
         onConfirm={handleDelete}
         isPending={deleteItem.isPending}
+      />
+
+      <ShareDialog
+        itemId={item.id}
+        itemTitle={item.title}
+        open={showShare}
+        onOpenChange={setShowShare}
       />
     </>
   );

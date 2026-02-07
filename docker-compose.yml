@@ -30,6 +30,18 @@ services:
       UPLOAD_DIR: /app/uploads
       MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-20}
 
+      # Email
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-resend}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@yourdomain.com}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+
+      # Virus scanning (optional)
+      VIRUS_SCAN_ENABLED: ${VIRUS_SCAN_ENABLED:-false}
+      VIRUS_SCAN_PROVIDER: ${VIRUS_SCAN_PROVIDER:-}
+      VIRUSTOTAL_API_KEY: ${VIRUSTOTAL_API_KEY:-}
+      CLAMAV_HOST: ${CLAMAV_HOST:-}
+      CLAMAV_PORT: ${CLAMAV_PORT:-3310}
+
     volumes:
       - uploads_data:/app/uploads
 
@@ -52,8 +64,36 @@ services:
     networks:
       - prod_net
 
+  # ClamAV antivirus scanner (optional - uncomment to enable)
+  # clamav:
+  #   image: clamav/clamav:1.4
+  #   container_name: dropboard-clamav
+  #   restart: unless-stopped
+  #   volumes:
+  #     - clamav_data:/var/lib/clamav
+  #     - uploads_data:/app/uploads:ro
+  #   ports:
+  #     - "3310:3310"
+  #   healthcheck:
+  #     test: ["CMD", "clamdcheck"]
+  #     interval: 60s
+  #     timeout: 10s
+  #     start_period: 120s
+  #     retries: 3
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: "1"
+  #         memory: 2G
+  #       reservations:
+  #         cpus: "0.25"
+  #         memory: 512M
+  #   networks:
+  #     - prod_net
+
 volumes:
   uploads_data:
+  # clamav_data:
 
 networks:
   prod_net:

@@ -5,9 +5,26 @@ import { eq, isNull, and } from "drizzle-orm";
 // Scan status types
 export type ScanStatus = "pending" | "scanning" | "clean" | "infected" | "error" | "skipped";
 
+// Scan provider types
+export type ScanProvider = "virustotal" | "clamav" | "none";
+
 // Environment check
 export function isScanEnabled(): boolean {
   return process.env.VIRUS_SCAN_ENABLED === "true";
+}
+
+// Auto-detect available scan provider based on environment variables
+export function getAvailableProvider(): ScanProvider {
+  // Explicit provider override
+  const explicit = process.env.VIRUS_SCAN_PROVIDER;
+  if (explicit === "virustotal" && process.env.VIRUSTOTAL_API_KEY) return "virustotal";
+  if (explicit === "clamav" && (process.env.CLAMAV_HOST || process.env.CLAMAV_SOCKET)) return "clamav";
+
+  // Auto-detect: prefer ClamAV (faster, local) over VirusTotal (rate-limited API)
+  if (process.env.CLAMAV_HOST || process.env.CLAMAV_SOCKET) return "clamav";
+  if (process.env.VIRUSTOTAL_API_KEY) return "virustotal";
+
+  return "none";
 }
 
 // Queue file for scanning

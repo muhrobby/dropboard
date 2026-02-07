@@ -83,6 +83,10 @@ export type FileAssetResponse = {
   storagePath: string;
   createdAt: string;
   downloadUrl: string;
+  // Virus scan fields
+  scanStatus: string | null;
+  scanResult: string | null;
+  scannedAt: string | null;
 };
 
 // Item
@@ -102,6 +106,9 @@ export type ItemResponse = {
   updatedAt: string;
   deletedAt?: string | null;
   fileAsset: FileAssetResponse | null;
+  // OCR fields
+  ocrText: string | null;
+  ocrStatus: string | null;
 };
 
 // Activity Log
