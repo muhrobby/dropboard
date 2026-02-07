@@ -52,7 +52,8 @@ export const auth = betterAuth({
     cookieAttributes: {
       // Only send cookies over HTTPS in production
       secure: process.env.NODE_ENV === "production",
-      // Prevent CSRF attacks
+      // For production with HTTPS and custom domain, use "lax" to allow cookies on same-site requests
+      // "lax" works for same-site and top-level navigations after POST
       sameSite: "lax",
       // Prevent JavaScript access to cookies (XSS protection)
       httpOnly: true,
