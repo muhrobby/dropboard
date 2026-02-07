@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/db";
 import { createPersonalWorkspace } from "@/services/workspace-service";
 import { users, sessions, accounts, verifications } from "@/db/schema/auth";
+import { sendEmail, getResetPasswordEmailHtml } from "@/lib/email";
 
 // Parse trusted origins from env (comma-separated) or fall back to BETTER_AUTH_URL
 function getTrustedOrigins(): string[] {
@@ -37,10 +38,18 @@ export const auth = betterAuth({
     // Security: Minimum password length increased from 8 to 12
     minPasswordLength: 12,
     // Security: Enforce password complexity
-    requireLowerCase: true,   // Require at least one lowercase letter
-    requireUpperCase: true,   // Require at least one uppercase letter
-    requireNumbers: true,     // Require at least one number
+    requireLowerCase: true, // Require at least one lowercase letter
+    requireUpperCase: true, // Require at least one uppercase letter
+    requireNumbers: true, // Require at least one number
     requireSpecialChars: true, // Require at least one special character
+    // Password reset callback
+    sendResetPassword: async ({ user, url }) => {
+      await sendEmail({
+        to: user.email,
+        subject: "Reset your password - Dropboard",
+        html: getResetPasswordEmailHtml(url),
+      });
+    },
   },
   session: {
     // Security: Session expiration configuration

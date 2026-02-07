@@ -50,14 +50,14 @@ function LoginForm() {
 
       // Get redirect URL
       const callbackUrl = searchParams.get("callbackUrl");
-      const redirectTo = callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
+      const redirectTo =
+        callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
 
       // Wait a bit for cookies to be set, then redirect
       setTimeout(() => {
         router.refresh(); // Refresh to sync cookies
         router.push(redirectTo);
       }, 500);
-
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
@@ -87,7 +87,15 @@ function LoginForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              <Link
+                href="/forgot-password"
+                className="text-xs text-muted-foreground hover:text-primary"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <PasswordInput
               id="password"
               placeholder="Enter your password"
