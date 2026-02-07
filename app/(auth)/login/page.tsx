@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,9 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -38,7 +39,10 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
+      // Redirect to callbackUrl if set by middleware, otherwise /dashboard
+      const callbackUrl = searchParams.get("callbackUrl");
+      const redirectTo = callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
+      router.push(redirectTo);
       router.refresh();
     } catch {
       toast.error("Something went wrong. Please try again.");
@@ -78,7 +82,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={isLoading}
-              minLength={8}
+              minLength={12}
               autoComplete="current-password"
             />
           </div>
@@ -96,5 +100,13 @@ export default function LoginPage() {
         </CardFooter>
       </form>
     </Card>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

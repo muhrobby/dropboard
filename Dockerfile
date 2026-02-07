@@ -56,6 +56,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Create uploads directory (will be mounted as volume in production)
+RUN mkdir -p /app/uploads && chown nextjs:nodejs /app/uploads
+
 # Set permissions
 USER nextjs
 

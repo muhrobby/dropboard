@@ -15,9 +15,9 @@ services:
       # Database - External PostgreSQL
       DATABASE_URL: ${DATABASE_URL}
 
-      # Auth
+      # Auth — MUST be your public-facing URL (e.g. https://dropboard.yourdomain.com)
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3004}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
 
       # Node Environment
       NODE_ENV: production
@@ -27,6 +27,11 @@ services:
 
       # File upload
       SIGNED_URL_SECRET: ${SIGNED_URL_SECRET}
+      UPLOAD_DIR: /app/uploads
+      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-20}
+
+    volumes:
+      - uploads_data:/app/uploads
 
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:3004/api/health"]
@@ -46,6 +51,9 @@ services:
 
     networks:
       - prod_net
+
+volumes:
+  uploads_data:
 
 networks:
   prod_net:

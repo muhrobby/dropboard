@@ -4,6 +4,21 @@ import { db } from "@/db";
 import { createPersonalWorkspace } from "@/services/workspace-service";
 import { users, sessions, accounts, verifications } from "@/db/schema/auth";
 
+// Parse trusted origins from env (comma-separated) or fall back to BETTER_AUTH_URL
+function getTrustedOrigins(): string[] {
+  const origins: string[] = [];
+  const appUrl = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
+  if (appUrl) origins.push(appUrl);
+  const allowed = process.env.NEXT_PUBLIC_ALLOWED_ORIGINS;
+  if (allowed) {
+    for (const o of allowed.split(",")) {
+      const trimmed = o.trim();
+      if (trimmed && !origins.includes(trimmed)) origins.push(trimmed);
+    }
+  }
+  return origins;
+}
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -15,6 +30,8 @@ export const auth = betterAuth({
     },
   }),
   basePath: "/api/v1/auth",
+  baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL,
+  trustedOrigins: getTrustedOrigins(),
   emailAndPassword: {
     enabled: true,
     // Security: Minimum password length increased from 8 to 12

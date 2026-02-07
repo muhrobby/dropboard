@@ -13,15 +13,15 @@ import {
 import { Activity, Settings } from "lucide-react";
 
 const mainNavItems = [
-  { href: "/drops", label: "Drops", icon: ImageDown },
-  { href: "/pinboard", label: "Pinboard", icon: Bookmark },
-  { href: "/search", label: "Search", icon: Search },
-  { href: "/team", label: "Team", icon: Users },
+  { href: "/dashboard/drops", label: "Drops", icon: ImageDown },
+  { href: "/dashboard/pinboard", label: "Pinboard", icon: Bookmark },
+  { href: "/dashboard/search", label: "Search", icon: Search },
+  { href: "/dashboard/team", label: "Team", icon: Users },
 ];
 
 const moreNavItems = [
-  { href: "/activity", label: "Activity", icon: Activity },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard/activity", label: "Activity", icon: Activity },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
 export function MobileNav() {

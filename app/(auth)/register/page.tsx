@@ -96,12 +96,12 @@ export default function RegisterPage() {
             <Input
               id="password"
               type="password"
-              placeholder="Min. 8 characters"
+              placeholder="Min. 12 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={isLoading}
-              minLength={8}
+              minLength={12}
               autoComplete="new-password"
             />
           </div>
@@ -115,7 +115,7 @@ export default function RegisterPage() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               disabled={isLoading}
-              minLength={8}
+              minLength={12}
               autoComplete="new-password"
             />
           </div>
