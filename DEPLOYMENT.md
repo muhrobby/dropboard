@@ -18,7 +18,14 @@ cp .env.example .env
 openssl rand -base64 32
 ```
 
-### 2. Build and Start Containers
+### 2. Create Network (Required)
+
+```bash
+# Create the external network first
+docker network create prod_net
+```
+
+### 3. Build and Start Containers
 
 ```bash
 # Build and start all services
@@ -31,7 +38,7 @@ docker-compose logs -f app
 docker-compose ps
 ```
 
-### 3. Access the Application
+### 4. Access the Application
 
 - Application: http://localhost:3000
 - API Health Check: http://localhost:3000/api/health
@@ -83,6 +90,24 @@ docker-compose exec app sh
 docker-compose exec postgres psql -U dropboard -d dropboard
 ```
 
+## Resource Limits
+
+The application has pre-configured resource limits:
+
+### Application Container
+- **CPU Limit**: 2 cores
+- **Memory Limit**: 1GB
+- **CPU Reservation**: 0.5 cores
+- **Memory Reservation**: 256MB
+
+### Database Container
+- **CPU Limit**: 1 core
+- **Memory Limit**: 512MB
+- **CPU Reservation**: 0.25 cores
+- **Memory Reservation**: 128MB
+
+To adjust these limits, edit the `deploy.resources` section in `docker-compose.yml`.
+
 ## Environment Variables
 
 | Variable | Description | Default |
@@ -99,7 +124,13 @@ docker-compose exec postgres psql -U dropboard -d dropboard
 
 ## Production Deployment
 
-### 1. Update Environment Variables
+### 1. Create Network
+
+```bash
+docker network create prod_net
+```
+
+### 2. Update Environment Variables
 
 ```bash
 # .env
@@ -110,7 +141,7 @@ BETTER_AUTH_URL=https://yourdomain.com
 NEXT_PUBLIC_ALLOWED_ORIGINS=https://yourdomain.com
 ```
 
-### 2. Use Reverse Proxy (Recommended)
+### 3. Use Reverse Proxy (Recommended)
 
 Use Nginx or Caddy as a reverse proxy for SSL/TLS termination.
 
@@ -144,7 +175,7 @@ server {
 }
 ```
 
-### 3. Database Backups
+### 4. Database Backups
 
 ```bash
 # Backup database
@@ -155,6 +186,18 @@ docker-compose exec -T postgres psql -U dropboard dropboard < backup.sql
 ```
 
 ## Troubleshooting
+
+### Network Error
+
+If you get an error about `prod_net` network not found:
+
+```bash
+# Create the external network
+docker network create prod_net
+
+# Then start the services again
+docker-compose up -d
+```
 
 ### Container Won't Start
 
