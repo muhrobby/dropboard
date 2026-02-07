@@ -43,7 +43,13 @@ function RegisterForm() {
     const hasNumber = /[0-9]/.test(password);
     const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
-    if (!hasMinLength || !hasUppercase || !hasLowercase || !hasNumber || !hasSpecial) {
+    if (
+      !hasMinLength ||
+      !hasUppercase ||
+      !hasLowercase ||
+      !hasNumber ||
+      !hasSpecial
+    ) {
       toast.error("Password tidak memenuhi syarat keamanan");
       return;
     }
@@ -66,7 +72,8 @@ function RegisterForm() {
 
       // Get redirect URL from callbackUrl param (for invite flow)
       const callbackUrl = searchParams.get("callbackUrl");
-      const redirectTo = callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
+      const redirectTo =
+        callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/dashboard";
 
       // Wait a bit for cookies to be set, then redirect
       setTimeout(() => {
@@ -87,7 +94,7 @@ function RegisterForm() {
         <CardDescription>Create your account</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 mb-3">
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input
