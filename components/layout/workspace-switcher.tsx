@@ -1,7 +1,7 @@
 "use client";
 
 import { useWorkspaceStore } from "@/stores/workspace-store";
-import { useCreateWorkspace } from "@/hooks/use-workspace";
+import { useWorkspaces, useCreateWorkspace } from "@/hooks/use-workspace";
 import {
   Select,
   SelectContent,
@@ -26,6 +26,7 @@ import { toast } from "sonner";
 export function WorkspaceSwitcher() {
   const { activeWorkspaceId, workspaces, setActiveWorkspace } =
     useWorkspaceStore();
+  useWorkspaces(); // Fetch and sync workspaces to store
   const createWorkspace = useCreateWorkspace();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newName, setNewName] = useState("");
