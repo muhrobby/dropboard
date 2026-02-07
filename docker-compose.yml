@@ -1,33 +1,4 @@
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:17-alpine
-    container_name: dropboard-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-dropboard}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dropboard}
-      POSTGRES_DB: ${POSTGRES_DB:-dropboard}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dropboard} -d ${POSTGRES_DB:-dropboard}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 512M
-        reservations:
-          cpus: "0.25"
-          memory: 128M
-    networks:
-      - prod_net
-
   # Next.js Application
   app:
     build:
@@ -36,27 +7,23 @@ services:
     container_name: dropboard-app
     restart: unless-stopped
     ports:
-      - "${APP_PORT:-3000}:3000"
+      - "${APP_PORT:-3004}:3000"
     environment:
-      # Database
-      DATABASE_URL: postgresql://${POSTGRES_USER:-dropboard}:${POSTGRES_PASSWORD:-dropboard}@postgres:5432/${POSTGRES_DB:-dropboard}
+      # Database - External PostgreSQL
+      DATABASE_URL: ${DATABASE_URL}
 
       # App URL
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3004}
 
       # Auth
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3004}
 
       # Node Environment
       NODE_ENV: production
 
       # CORS
-      NEXT_PUBLIC_ALLOWED_ORIGINS: ${NEXT_PUBLIC_ALLOWED_ORIGINS:-http://localhost:3000}
-
-    depends_on:
-      postgres:
-        condition: service_healthy
+      NEXT_PUBLIC_ALLOWED_ORIGINS: ${NEXT_PUBLIC_ALLOWED_ORIGINS:-http://localhost:3004}
 
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:3000/api/health"]
@@ -76,10 +43,6 @@ services:
 
     networks:
       - prod_net
-
-volumes:
-  pgdata:
-    driver: local
 
 networks:
   prod_net:

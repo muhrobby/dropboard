@@ -4,6 +4,7 @@
 
 - Docker Engine 20.10 or higher
 - Docker Compose 2.0 or higher
+- External PostgreSQL database (already configured)
 
 ## Quick Start
 
@@ -16,6 +17,8 @@ cp .env.example .env
 # Edit .env and update the values
 # IMPORTANT: Generate a secure BETTER_AUTH_SECRET
 openssl rand -base64 32
+
+# DATABASE_URL is already configured with your external PostgreSQL
 ```
 
 ### 2. Create Network (Required)
@@ -57,21 +60,14 @@ docker-compose up -d
 docker-compose down
 ```
 
-### Stop and Remove Volumes
-
-```bash
-docker-compose down -v
-```
-
 ### View Logs
 
 ```bash
 # All services
 docker-compose logs -f
 
-# Specific service
+# App service
 docker-compose logs -f app
-docker-compose logs -f postgres
 ```
 
 ### Rebuild Container
@@ -85,9 +81,6 @@ docker-compose up -d --build app
 ```bash
 # Access app container
 docker-compose exec app sh
-
-# Access database
-docker-compose exec postgres psql -U dropboard -d dropboard
 ```
 
 ## Resource Limits
@@ -100,27 +93,19 @@ The application has pre-configured resource limits:
 - **CPU Reservation**: 0.5 cores
 - **Memory Reservation**: 256MB
 
-### Database Container
-- **CPU Limit**: 1 core
-- **Memory Limit**: 512MB
-- **CPU Reservation**: 0.25 cores
-- **Memory Reservation**: 128MB
-
 To adjust these limits, edit the `deploy.resources` section in `docker-compose.yml`.
 
 ## Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `POSTGRES_USER` | Database username | `dropboard` |
-| `POSTGRES_PASSWORD` | Database password | `dropboard` |
-| `POSTGRES_DB` | Database name | `dropboard` |
-| `POSTGRES_PORT` | Database port | `5432` |
+| `DATABASE_URL` | PostgreSQL connection string | **Required** |
 | `APP_PORT` | Application port | `3004` |
 | `NEXT_PUBLIC_APP_URL` | Application URL | `http://localhost:3004` |
 | `BETTER_AUTH_SECRET` | Auth secret key | **Required** |
 | `BETTER_AUTH_URL` | Auth URL | `http://localhost:3004` |
 | `NEXT_PUBLIC_ALLOWED_ORIGINS` | CORS allowed origins | `http://localhost:3004` |
+| `NODE_ENV` | Node environment | `production` |
 
 ## Production Deployment
 
@@ -134,7 +119,7 @@ docker network create prod_net
 
 ```bash
 # .env
-POSTGRES_PASSWORD=your_secure_password_here
+DATABASE_URL=postgresql://user:password@host:port/database
 BETTER_AUTH_SECRET=your_generated_secret_here
 NEXT_PUBLIC_APP_URL=https://yourdomain.com
 BETTER_AUTH_URL=https://yourdomain.com
@@ -175,16 +160,6 @@ server {
 }
 ```
 
-### 4. Database Backups
-
-```bash
-# Backup database
-docker-compose exec postgres pg_dump -U dropboard dropboard > backup.sql
-
-# Restore database
-docker-compose exec -T postgres psql -U dropboard dropboard < backup.sql
-```
-
 ## Troubleshooting
 
 ### Network Error
@@ -199,6 +174,23 @@ docker network create prod_net
 docker-compose up -d
 ```
 
+### Database Connection Issues
+
+If the application cannot connect to the external database:
+
+```bash
+# Check if container can reach the database host
+docker-compose exec app ping -c 3 43.133.147.104
+
+# Check database logs in the container
+docker-compose logs app | grep -i database
+```
+
+Make sure:
+- The database host (`43.133.147.104`) is accessible from the Docker container
+- The database port (`5433`) is open and not blocked by firewall
+- The database credentials are correct
+
 ### Container Won't Start
 
 ```bash
@@ -209,21 +201,11 @@ docker-compose logs app
 netstat -tlnp | grep 3004
 ```
 
-### Database Connection Issues
-
-```bash
-# Check if database is ready
-docker-compose exec postgres pg_isready -U dropboard
-
-# Check database logs
-docker-compose logs postgres
-```
-
 ### Rebuild From Scratch
 
 ```bash
-# Stop and remove everything
-docker-compose down -v
+# Stop and remove containers
+docker-compose down
 
 # Rebuild and start
 docker-compose up -d --build
@@ -245,3 +227,20 @@ Response:
   "database": "connected"
 }
 ```
+
+## External Database
+
+This application uses an external PostgreSQL database. Make sure:
+
+1. The database is accessible from your Docker host
+2. The database exists and is properly configured
+3. The connection string format is correct:
+   ```
+   postgresql://username:password@host:port/database
+   ```
+
+Current configuration:
+- **Host**: 43.133.147.104
+- **Port**: 5433
+- **User**: postgress
+- **Database**: Postgress
