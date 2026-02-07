@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  LayoutDashboard,
   ImageDown,
   Bookmark,
   Search,
@@ -15,6 +16,7 @@ import { WorkspaceSwitcher } from "./workspace-switcher";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const navItems = [
+  { href: "", label: "Dashboard", icon: LayoutDashboard },
   { href: "/drops", label: "Drops", icon: ImageDown },
   { href: "/pinboard", label: "Pinboard", icon: Bookmark },
   { href: "/search", label: "Search", icon: Search },
