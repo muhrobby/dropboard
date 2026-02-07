@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Label, Pie, PieChart, ResponsiveContainer, Cell } from "recharts";
+import { Label, Pie, PieChart, Cell } from "recharts";
 import { useWorkspaceStore } from "@/stores/workspace-store";
 import { FREE_STORAGE_LIMIT_BYTES } from "@/lib/constants";
 import { formatBytes } from "@/lib/utils";
@@ -26,7 +26,7 @@ export function StorageWidget() {
   const storageLimit = FREE_STORAGE_LIMIT_BYTES;
   const storageFree = Math.max(0, storageLimit - storageUsed);
 
-  // Explicit colors to avoid black chart issue
+  // Explicit colors
   const USAGE_COLOR = "#2563EB"; // Blue-600
   const FREE_COLOR = "#E5E7EB"; // Gray-200
 
@@ -40,26 +40,19 @@ export function StorageWidget() {
   );
 
   const chartConfig = {
-    visitors: {
-      label: "Storage",
-    },
-    used: {
-      label: "Used",
-      color: USAGE_COLOR,
-    },
-    free: {
-      label: "Free",
-      color: FREE_COLOR,
-    },
+    visitors: { label: "Storage" },
+    used: { label: "Used", color: USAGE_COLOR },
+    free: { label: "Free", color: FREE_COLOR },
   } satisfies ChartConfig;
 
-  const totalSizeFormatted = React.useMemo(() => {
-    return formatBytes(storageLimit, 0);
-  }, [storageLimit]);
-
-  const usedSizeFormatted = React.useMemo(() => {
-    return formatBytes(storageUsed);
-  }, [storageUsed]);
+  const totalSizeFormatted = React.useMemo(
+    () => formatBytes(storageLimit, 0),
+    [storageLimit],
+  );
+  const usedSizeFormatted = React.useMemo(
+    () => formatBytes(storageUsed),
+    [storageUsed],
+  );
 
   // Handle division by zero
   const percentUsed =
@@ -71,15 +64,16 @@ export function StorageWidget() {
         <CardTitle>Storage Usage</CardTitle>
         <CardDescription>Current workspace</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 pb-0 min-h-[250px] relative">
-        <div className="absolute inset-0 flex items-center justify-center">
+      <CardContent className="flex-1 pb-0 flex items-center justify-center min-h-[250px]">
+        {/* Simple container with no absolute positioning ticks */}
+        <div className="w-full h-[200px] flex items-center justify-center">
           <ChartContainer
             config={chartConfig}
-            className="mx-auto aspect-square h-[200px]"
+            className="aspect-square h-full w-full max-w-[200px]"
           >
             <PieChart>
               <ChartTooltip
-                cursor={false} // Pie chart usually doesn't need cursor, or transparency
+                cursor={false}
                 content={
                   <ChartTooltipContent
                     hideLabel
@@ -93,7 +87,9 @@ export function StorageWidget() {
                 nameKey="name"
                 innerRadius={60}
                 outerRadius={80}
-                strokeWidth={0} // Remove stroke to prevent outline artifacts
+                strokeWidth={0}
+                cx="50%" // Force center X
+                cy="50%" // Force center Y
               >
                 <Label
                   content={({ viewBox }) => {
@@ -124,7 +120,6 @@ export function StorageWidget() {
                     }
                   }}
                 />
-                {/* Add Cells explicitly for color control */}
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} />
                 ))}
