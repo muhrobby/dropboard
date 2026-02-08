@@ -4,11 +4,62 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ============================================
+   STRIPE-LIKE DESIGN TOKENS
+   ============================================ */
+
 @theme inline {
+  /* Font Family */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Typography Scale (Stripe-inspired) */
+  --text-h1: 1.5rem; /* 24px - Page Title */
+  --text-h2: 1.125rem; /* 18px - Section Title */
+  --text-h3: 1rem; /* 16px - Component Title */
+  --text-body: 0.875rem; /* 14px - Body */
+  --text-caption: 0.75rem; /* 12px - Caption */
+
+  --leading-h1: 2rem; /* 32px */
+  --leading-h2: 1.75rem; /* 28px */
+  --leading-h3: 1.5rem; /* 24px */
+  --leading-body: 1.25rem; /* 20px */
+  --leading-caption: 1rem; /* 16px */
+
+  /* Spacing Scale */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem; /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-6: 1.5rem; /* 24px */
+  --space-8: 2rem; /* 32px */
+  --space-12: 3rem; /* 48px */
+
+  /* Shadows (Calm, subtle) */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+
+  /* Brand Colors - Indigo */
+  --brand: oklch(0.585 0.233 277); /* #6366f1 */
+  --brand-hover: oklch(0.518 0.233 277); /* Darker on hover */
+  --brand-light: oklch(0.932 0.032 277); /* Light accent bg */
+  --brand-foreground: oklch(0.985 0 0); /* White text on brand */
+
+  /* Semantic Colors */
+  --success: oklch(0.648 0.15 160); /* Green */
+  --success-light: oklch(0.95 0.05 160);
+  --warning: oklch(0.795 0.184 86); /* Yellow */
+  --warning-light: oklch(0.97 0.05 86);
+  --error: oklch(0.628 0.258 29); /* Red */
+  --error-light: oklch(0.95 0.05 29);
+
+  /* Theme color mappings */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -38,6 +89,9 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-brand: var(--brand);
+
+  /* Radius */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

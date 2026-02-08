@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import {
-  LayoutDashboard,
   ImageDown,
   Bookmark,
   Search,
@@ -11,14 +9,28 @@ import {
   Activity,
   Settings,
   ArrowRight,
+  HardDrive,
+  FolderOpen,
+  TrendingUp,
 } from "lucide-react";
 import { useWorkspaces } from "@/hooks/use-workspace";
 import { useMembers } from "@/hooks/use-members";
 import { useWorkspaceStore } from "@/stores/workspace-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FREE_STORAGE_LIMIT_BYTES } from "@/lib/constants";
 import { Progress } from "@/components/ui/progress";
+import { FREE_STORAGE_LIMIT_BYTES } from "@/lib/constants";
+import {
+  PageHeader,
+  MetricCard,
+  OverviewLayout,
+  OverviewMetrics,
+  OverviewContent,
+  OverviewMain,
+  OverviewSide,
+  SectionHeader,
+} from "@/components/patterns";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -34,28 +46,32 @@ const quickLinks = [
     description: "Drag and drop files to quickly upload",
     href: "/dashboard/drops",
     icon: ImageDown,
-    color: "text-blue-500",
+    color: "text-indigo-500",
+    bgColor: "bg-indigo-500/10",
   },
   {
     title: "Pinboard",
     description: "View your pinned items",
     href: "/dashboard/pinboard",
     icon: Bookmark,
-    color: "text-yellow-500",
+    color: "text-amber-500",
+    bgColor: "bg-amber-500/10",
   },
   {
     title: "Search",
     description: "Find anything across your workspace",
     href: "/dashboard/search",
     icon: Search,
-    color: "text-purple-500",
+    color: "text-violet-500",
+    bgColor: "bg-violet-500/10",
   },
   {
     title: "Team",
     description: "Manage team members and invites",
     href: "/dashboard/team",
     icon: Users,
-    color: "text-green-500",
+    color: "text-emerald-500",
+    bgColor: "bg-emerald-500/10",
   },
   {
     title: "Activity",
@@ -63,13 +79,15 @@ const quickLinks = [
     href: "/dashboard/activity",
     icon: Activity,
     color: "text-orange-500",
+    bgColor: "bg-orange-500/10",
   },
   {
     title: "Settings",
     description: "Manage workspace settings",
     href: "/dashboard/settings",
     icon: Settings,
-    color: "text-gray-500",
+    color: "text-slate-500",
+    bgColor: "bg-slate-500/10",
   },
 ];
 
@@ -81,119 +99,162 @@ export default function DashboardPage() {
   const storageUsed = workspace?.storageUsedBytes ?? 0;
   const storagePercent = Math.min(
     100,
-    Math.round((storageUsed / FREE_STORAGE_LIMIT_BYTES) * 100)
+    Math.round((storageUsed / FREE_STORAGE_LIMIT_BYTES) * 100),
   );
 
   if (workspacesLoading) {
     return (
-      <div className="p-4 md:p-6 space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
+      <div className="p-6 lg:p-8 space-y-8">
+        <div className="flex justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Welcome back! Here&apos;s what&apos;s happening with your workspace.
-        </p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Storage Used
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatBytes(storageUsed)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              of {formatBytes(FREE_STORAGE_LIMIT_BYTES)} total
-            </p>
-            <Progress value={storagePercent} className="mt-2" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Workspaces
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{workspaces?.length ?? 0}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Active workspace
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Team Members
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{members?.length ?? 0}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {workspace?.type === "personal" ? "Personal workspace" : "Team workspace"}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Storage Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{storagePercent}%</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {storagePercent > 90 ? "Almost full" : storagePercent > 70 ? "Getting full" : "Plenty of space"}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Links */}
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {quickLinks.map((link) => (
-            <Link key={link.href} href={link.href}>
-              <Card className="transition-colors hover:bg-accent">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">{link.title}</CardTitle>
-                    <link.icon className={`h-5 w-5 ${link.color}`} />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    {link.description}
-                  </p>
-                  <div className="flex items-center text-sm text-primary mt-2">
-                    <span>Go to page</span>
-                    <ArrowRight className="ml-1 h-4 w-4" />
-                  </div>
-                </CardContent>
-              </Card>
+    <div className="p-6 lg:p-8">
+      <OverviewLayout>
+        {/* Page Header */}
+        <PageHeader
+          title="Dashboard"
+          description="Welcome back! Here's what's happening with your workspace."
+        >
+          <Button asChild>
+            <Link href="/dashboard/drops">
+              <ImageDown className="h-4 w-4 mr-2" />
+              Upload Files
             </Link>
-          ))}
+          </Button>
+        </PageHeader>
+
+        {/* Metrics Grid */}
+        <OverviewMetrics>
+          <MetricCard
+            label="Storage Used"
+            value={formatBytes(storageUsed)}
+            change={`${storagePercent}% used`}
+            trend={storagePercent > 80 ? "down" : "neutral"}
+            icon={<HardDrive className="h-4 w-4" />}
+          />
+          <MetricCard
+            label="Workspaces"
+            value={workspaces?.length ?? 0}
+            change="Active"
+            trend="neutral"
+            icon={<FolderOpen className="h-4 w-4" />}
+          />
+          <MetricCard
+            label="Team Members"
+            value={members?.length ?? 0}
+            change={workspace?.type === "personal" ? "Personal" : "Team"}
+            trend="neutral"
+            icon={<Users className="h-4 w-4" />}
+          />
+          <MetricCard
+            label="Storage Limit"
+            value={formatBytes(FREE_STORAGE_LIMIT_BYTES)}
+            change="Free tier"
+            trend="up"
+            icon={<TrendingUp className="h-4 w-4" />}
+          />
+        </OverviewMetrics>
+
+        {/* Two Column Content */}
+        <OverviewContent>
+          {/* Main – Storage Progress */}
+          <OverviewMain>
+            <Card>
+              <CardHeader>
+                <SectionHeader
+                  title="Storage Overview"
+                  description="Your current storage usage"
+                />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Used</span>
+                  <span className="font-medium tabular-nums">
+                    {formatBytes(storageUsed)} /{" "}
+                    {formatBytes(FREE_STORAGE_LIMIT_BYTES)}
+                  </span>
+                </div>
+                <Progress value={storagePercent} className="h-2" />
+                <p className="text-xs text-muted-foreground">
+                  {storagePercent > 90
+                    ? "⚠️ Almost full – consider upgrading or cleaning up files"
+                    : storagePercent > 70
+                      ? "Getting close to limit"
+                      : "Plenty of space available"}
+                </p>
+              </CardContent>
+            </Card>
+          </OverviewMain>
+
+          {/* Side – Workspace Info */}
+          <OverviewSide>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Workspace Info</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Name</span>
+                  <span className="font-medium">{workspace?.name ?? "—"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Type</span>
+                  <span className="font-medium capitalize">
+                    {workspace?.type ?? "—"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Members</span>
+                  <span className="font-medium tabular-nums">
+                    {members?.length ?? 0}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          </OverviewSide>
+        </OverviewContent>
+
+        {/* Quick Actions Grid */}
+        <div>
+          <SectionHeader title="Quick Actions" className="mb-4" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {quickLinks.map((link) => (
+              <Link key={link.href} href={link.href}>
+                <Card className="group transition-all hover:shadow-md hover:border-primary/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      <div className={`p-2.5 rounded-lg ${link.bgColor}`}>
+                        <link.icon className={`h-5 w-5 ${link.color}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{link.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                          {link.description}
+                        </p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
+      </OverviewLayout>
     </div>
   );
 }

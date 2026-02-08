@@ -11,9 +11,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
-import { Settings, HardDrive, Users, Trash2, Webhook, ChevronRight } from "lucide-react";
+import {
+  Settings,
+  HardDrive,
+  Users,
+  Trash2,
+  Webhook,
+  ChevronRight,
+} from "lucide-react";
 import { toast } from "sonner";
 import { FREE_STORAGE_LIMIT_BYTES } from "@/lib/constants";
+import { PageHeader } from "@/components/patterns";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -35,7 +43,7 @@ export default function SettingsPage() {
   const storageUsed = workspace?.storageUsedBytes ?? 0;
   const storagePercent = Math.min(
     100,
-    Math.round((storageUsed / FREE_STORAGE_LIMIT_BYTES) * 100)
+    Math.round((storageUsed / FREE_STORAGE_LIMIT_BYTES) * 100),
   );
 
   async function handleSave() {
@@ -95,13 +103,8 @@ export default function SettingsPage() {
   const isTeam = workspace.type === "team";
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 pb-20 md:pb-6 max-w-2xl">
-      <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage workspace preferences
-        </p>
-      </div>
+    <div className="flex flex-1 flex-col gap-6 p-6 lg:p-8 pb-20 md:pb-6 max-w-2xl">
+      <PageHeader title="Settings" description="Manage workspace preferences" />
 
       {/* General */}
       <Card>
@@ -204,7 +207,8 @@ export default function SettingsPage() {
           <CardContent>
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                {members?.length ?? 0} member{(members?.length ?? 0) !== 1 ? "s" : ""}
+                {members?.length ?? 0} member
+                {(members?.length ?? 0) !== 1 ? "s" : ""}
               </p>
               <Button
                 variant="outline"

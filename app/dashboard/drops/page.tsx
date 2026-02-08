@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  ImageDown,
   Upload,
   Plus,
   Folder,
@@ -42,6 +41,7 @@ import {
   getDaysRemaining,
 } from "@/components/drops/drops-page-utils";
 import { Input } from "@/components/ui/input";
+import { PageHeader, MetricCard } from "@/components/patterns";
 
 type ViewMode = "grid" | "list";
 type SortBy = "name" | "date" | "size";
@@ -407,14 +407,15 @@ export default function DropsPage() {
       {/* Header */}
       <div className="border-b bg-background">
         <div className="p-4 md:p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Files className="w-6 h-6" />
-                My Drive
-              </h1>
-            </div>
-          </div>
+          <PageHeader
+            title="My Drive"
+            description="Manage your uploaded files and folders"
+          >
+            <Button onClick={() => setUploadModalOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Upload
+            </Button>
+          </PageHeader>
 
           {/* Breadcrumbs */}
           <nav className="flex items-center gap-1 text-sm">
