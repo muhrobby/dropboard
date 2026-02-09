@@ -64,9 +64,12 @@ export function MobileSidebar() {
         <ScrollArea className="flex-1 px-3">
           <nav className="space-y-1">
             {navItems.map((item) => {
+              // Dashboard should only be active when exactly on /dashboard
               const isActive =
-                pathname === item.href ||
-                pathname.startsWith(item.href + "/");
+                item.href === "/dashboard"
+                  ? pathname === "/dashboard"
+                  : pathname === item.href ||
+                  pathname.startsWith(item.href + "/");
               return (
                 <Link
                   key={item.href}

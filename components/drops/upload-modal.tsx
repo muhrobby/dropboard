@@ -386,131 +386,21 @@ export function UploadModal() {
             </div>
           )}
 
-          {/* File List with Upload Progress */}
-          {files.length > 0 && (
-            <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">
-                  {isFolderMode ? "Folder contents" : "Selected Files"}
-                </span>
-                <span className="text-muted-foreground text-xs">
-                  {files.length} / 5 max
-                </span>
-              </div>
-
-              {/* Folder Name Input */}
-              {isFolderMode && (
-                <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2">
-                  <Label htmlFor="folder-name">Folder Name</Label>
-                  <Input
-                    id="folder-name"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="My Project Files"
-                    disabled={isUploading}
-                    className="bg-background"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Files will be grouped under this folder name
-                  </p>
-                </div>
-              )}
-
-              {/* Files List */}
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                {files.map((file, index) => {
-                  const fileId = `${file.name}-${file.size}`;
-                  const state = uploadStates[fileId] || {
-                    status: "pending" as const,
-                    progress: 0,
-                  };
-                  const Icon = getFileIcon(file.type);
-                  const iconColor = getFileColor(file.type);
-
-                  return (
-                    <div
-                      key={fileId}
-                      className={cn(
-                        "relative flex items-center gap-3 p-3 rounded-xl transition-all duration-200",
-                        state.status === "uploading" && "bg-primary/5",
-                        state.status === "success" && "bg-green-500/5",
-                        state.status === "error" && "bg-destructive/5",
-                      )}
-                    >
-                      {/* File Icon */}
-                      <div className="shrink-0">
-                        <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center">
-                          <Icon className={cn("w-5 h-5", iconColor)} />
-                        </div>
-                      </div>
-
-                      {/* File Info */}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm font-medium truncate">
-                            {file.name}
-                          </p>
-                          {state.status === "success" && (
-                            <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                          )}
-                          {state.status === "error" && (
-                            <XCircle className="w-4 h-4 text-destructive shrink-0" />
-                          )}
-                          {state.status === "uploading" && (
-                            <Loader2 className="w-4 h-4 text-primary animate-spin shrink-0" />
-                          )}
-                        </div>
-
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{formatSize(file.size)}</span>
-
-                          {/* Progress bar untuk uploading */}
-                          {state.status === "uploading" && (
-                            <span>{state.progress}%</span>
-                          )}
-                          {state.status === "success" && (
-                            <span className="text-green-500">Complete</span>
-                          )}
-                          {state.status === "error" && (
-                            <span className="text-destructive">Failed</span>
-                          )}
-                        </div>
-
-                        {/* Progress Bar */}
-                        {state.status === "uploading" && (
-                          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                            <div
-                              className="h-full bg-primary transition-all duration-300 ease-out animate-pulse"
-                              style={{ width: `${state.progress}%` }}
-                            />
-                          </div>
-                        )}
-                        {state.status === "success" && (
-                          <div className="mt-2 h-1.5 w-full rounded-full bg-green-500 animate-in fade-in" />
-                        )}
-                        {state.status === "error" && (
-                          <div className="mt-2 h-1.5 w-full rounded-full bg-destructive animate-in fade-in" />
-                        )}
-                      </div>
-
-                      {/* Remove Button */}
-                      {!isUploading &&
-                        !isProcessing &&
-                        state.status === "pending" && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeFile(index);
-                            }}
-                            className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        )}
-                    </div>
-                  );
-                })}
-              </div>
+          {/* Folder Name Input */}
+          {isFolderMode && files.length > 0 && (
+            <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2">
+              <Label htmlFor="folder-name">Folder Name</Label>
+              <Input
+                id="folder-name"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="My Project Files"
+                disabled={isUploading}
+                className="bg-background"
+              />
+              <p className="text-xs text-muted-foreground">
+                Files will be grouped under this folder name
+              </p>
             </div>
           )}
 

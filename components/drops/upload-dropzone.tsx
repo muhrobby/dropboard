@@ -277,18 +277,23 @@ export function UploadDropzone({
             <span className="font-medium">
               {files.length} {files.length === 1 ? "file" : "files"} selected
             </span>
-            <button
-              onClick={() => {
-                files.forEach(f => {
-                  if (f.preview) URL.revokeObjectURL(f.preview);
-                });
-                setFiles([]);
-                onFilesSelected([]);
-              }}
-              className="text-muted-foreground hover:text-destructive transition-colors text-xs"
-            >
-              Clear all
-            </button>
+            <div className="flex items-center gap-3">
+              <span className="text-muted-foreground text-xs">
+                {files.length}/{maxFiles} max
+              </span>
+              <button
+                onClick={() => {
+                  files.forEach(f => {
+                    if (f.preview) URL.revokeObjectURL(f.preview);
+                  });
+                  setFiles([]);
+                  onFilesSelected([]);
+                }}
+                className="text-muted-foreground hover:text-destructive transition-colors text-xs"
+              >
+                Clear all
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
