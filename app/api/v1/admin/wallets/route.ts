@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/middleware/auth-guard";
+import { requireAdmin, ForbiddenError } from "@/middleware/admin-guard";
 import { db } from "@/db";
 import { wallets } from "@/db/schema";
 import { desc, like, eq, and } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
     try {
-        await requireAuth();
-        // TODO: Add Admin role check here
+        await requireAdmin();
 
         const searchParams = request.nextUrl.searchParams;
         const limit = parseInt(searchParams.get("limit") || "10");
@@ -39,6 +38,14 @@ export async function GET(request: NextRequest) {
 
     } catch (error) {
         console.error("Error fetching admin wallets:", error);
+        
+        if (error instanceof ForbiddenError) {
+            return NextResponse.json(
+                { error: "Admin access required" },
+                { status: 403 }
+            );
+        }
+        
         return NextResponse.json(
             { error: "Failed to fetch wallets" },
             { status: 500 }

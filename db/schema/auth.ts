@@ -16,11 +16,13 @@ export const users = pgTable(
     email: text("email").notNull().unique(),
     emailVerified: boolean("emailVerified").notNull().default(false),
     image: text("image"),
+    role: text("role").notNull().default("user"), // 'user' | 'admin' | 'super_admin'
     createdAt: timestamp("createdAt", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull(),
   },
   (table) => [
     index("idx_user_email").on(table.email),
+    index("idx_user_role").on(table.role),
   ]
 );
 

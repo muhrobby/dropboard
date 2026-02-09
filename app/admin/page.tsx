@@ -116,7 +116,14 @@ export default function AdminDashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {recentOrders?.map((order: any) => (
+                            {recentOrders?.map((order: { 
+                                id: string; 
+                                description?: string; 
+                                user?: { email: string }; 
+                                createdAt: string; 
+                                amount: number; 
+                                status: string;
+                            }) => (
                                 <div key={order.id} className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">

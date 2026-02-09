@@ -114,7 +114,15 @@ export default function AdminOrdersPage() {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            data?.data?.map((order: any) => (
+                            data?.data?.map((order: { 
+                                id: string; 
+                                user?: { name: string; email: string };
+                                type?: string;
+                                amount: number;
+                                gatewayProvider?: string;
+                                status: string;
+                                createdAt: string;
+                            }) => (
                                 <TableRow key={order.id}>
                                     <TableCell className="font-mono text-xs">{order.id.slice(0, 8)}...</TableCell>
                                     <TableCell>

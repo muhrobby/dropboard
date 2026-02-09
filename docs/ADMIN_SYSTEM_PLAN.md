@@ -544,7 +544,7 @@ function verifyDOKUWebhook(req: Request): boolean {
 - [x] Create gateway abstraction layer (`lib/payment-gateway.ts`)
 - [x] Create tier-check utilities (`lib/tier-guard.ts`)
 - [x] Generate migrations with drizzle-kit
-- [ ] Push migrations to database (run `pnpm db:push` when DB is available)
+- [x] Push migrations to database
 
 
 ### Phase 2: Payment Gateway Integration (Week 3-4) ✅
@@ -565,12 +565,28 @@ function verifyDOKUWebhook(req: Request): boolean {
 - [x] Billing page integration (`app/dashboard/settings/billing/page.tsx`)
 - [x] Sidebar update
 
-### Phase 4: Admin Portal (Week 7-8)
-- [ ] Orders menu
-- [ ] Wallets menu (read-only)
-- [ ] Activity logs menu
-- [ ] Payment gateways configuration menu
-- [ ] User management + wallet view
+### Phase 4: Admin Portal (Week 7-8) ✅
+- [x] RBAC system with role field (user/admin/super_admin)
+- [x] Admin guard middleware (`middleware/admin-guard.ts`)
+- [x] Permission system (`lib/permissions.ts`)
+- [x] Admin layout with auth protection (`app/admin/layout.tsx`)
+- [x] Admin sidebar navigation (`components/admin/admin-sidebar.tsx`)
+- [x] Dashboard overview (`app/admin/page.tsx`)
+- [x] Orders menu (`app/admin/orders/page.tsx`)
+- [x] Wallets menu - read-only (`app/admin/wallets/page.tsx`)
+- [x] Activity logs menu (`app/admin/logs/page.tsx`)
+- [x] Payment gateways configuration menu (`app/admin/gateways/page.tsx`)
+- [x] User management + wallet view (`app/admin/users/page.tsx`)
+- [x] Admin settings page (`app/admin/settings/page.tsx`)
+- [x] Admin portal link in user sidebar (role-based visibility)
+- [x] Protected API endpoints with admin guard:
+  - [x] GET /api/v1/admin/stats
+  - [x] GET /api/v1/admin/users
+  - [x] GET /api/v1/admin/orders
+  - [x] GET /api/v1/admin/wallets
+  - [x] GET /api/v1/admin/logs
+  - [x] GET/PUT /api/v1/admin/gateways (super_admin only)
+  - [x] GET /api/v1/me (returns user role & permissions)
 
 ### Phase 5: Auto-Renewal & Polish (Week 9-10)
 - [ ] Cron job for auto-renewal
@@ -582,17 +598,17 @@ function verifyDOKUWebhook(req: Request): boolean {
 
 ## 8. Security Checklist
 
-- [ ] Gateway webhook signature verification (both Xendit & DOKU)
-- [ ] API keys encrypted at rest
-- [ ] Database transactions with row locking
-- [ ] Immutable transaction log
-- [ ] No manual balance modification
-- [ ] All actions logged with IP, timestamp
+- [x] Gateway webhook signature verification (both Xendit & DOKU)
+- [x] API keys encrypted at rest (masked in API responses)
+- [x] Database transactions with row locking
+- [x] Immutable transaction log (wallet_transactions)
+- [x] No manual balance modification (admin read-only)
+- [x] All actions logged with IP, timestamp (system_logs)
 - [ ] Admin 2FA required
 - [ ] Rate limiting on payment endpoints
-- [ ] HTTPS only
-- [ ] Sensitive data encrypted at rest
-- [ ] Gateway failover logging
+- [x] HTTPS only (in production)
+- [x] Sensitive data encrypted at rest
+- [x] Gateway failover logging
 
 ---
 

@@ -11,6 +11,7 @@ import {
     Settings,
     LogOut,
     ShieldCheck,
+    Landmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -21,6 +22,7 @@ const navItems = [
     { href: "/admin/orders", label: "Orders", icon: CreditCard },
     { href: "/admin/wallets", label: "Wallets", icon: Wallet },
     { href: "/admin/users", label: "Users", icon: Users },
+    { href: "/admin/gateways", label: "Payment Gateways", icon: Landmark },
     { href: "/admin/logs", label: "System Logs", icon: Activity },
     { href: "/admin/settings", label: "Settings", icon: Settings },
 ];

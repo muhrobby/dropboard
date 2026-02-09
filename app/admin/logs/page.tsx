@@ -51,7 +51,7 @@ export default function AdminLogsPage() {
                 )}
                 <ScrollArea className="h-full p-4">
                     <div className="space-y-2">
-                        {data?.data?.map((log: any) => {
+                        {data?.data?.map((log: { id: string; level: string; category: string; message: string; metadata?: Record<string, unknown> | null; createdAt: string }) => {
                             const type = log.level.toLowerCase();
                             return (
                                 <div key={log.id} className="flex gap-4 p-2 hover:bg-slate-900 rounded transition-colors group">

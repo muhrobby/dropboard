@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/middleware/auth-guard";
+import { requireAdmin, ForbiddenError } from "@/middleware/admin-guard";
 import { db } from "@/db";
 import { topupOrders, users, workspaces, subscriptions } from "@/db/schema";
 import { sql, eq } from "drizzle-orm";
 
 export async function GET() {
     try {
-        await requireAuth();
-        // TODO: Add Admin role check here
+        await requireAdmin();
 
         const [revenueResult] = await db
             .select({ value: sql<number>`sum(${topupOrders.amount})` })
@@ -51,6 +50,14 @@ export async function GET() {
 
     } catch (error) {
         console.error("Error fetching admin stats:", error);
+        
+        if (error instanceof ForbiddenError) {
+            return NextResponse.json(
+                { error: "Admin access required" },
+                { status: 403 }
+            );
+        }
+        
         return NextResponse.json(
             { error: "Failed to fetch admin stats" },
             { status: 500 }
