@@ -14,26 +14,43 @@
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   /* Typography Scale (Stripe-inspired) */
-  --text-h1: 1.5rem; /* 24px - Page Title */
-  --text-h2: 1.125rem; /* 18px - Section Title */
-  --text-h3: 1rem; /* 16px - Component Title */
-  --text-body: 0.875rem; /* 14px - Body */
-  --text-caption: 0.75rem; /* 12px - Caption */
+  --text-h1: 1.5rem;
+  /* 24px - Page Title */
+  --text-h2: 1.125rem;
+  /* 18px - Section Title */
+  --text-h3: 1rem;
+  /* 16px - Component Title */
+  --text-body: 0.875rem;
+  /* 14px - Body */
+  --text-caption: 0.75rem;
+  /* 12px - Caption */
 
-  --leading-h1: 2rem; /* 32px */
-  --leading-h2: 1.75rem; /* 28px */
-  --leading-h3: 1.5rem; /* 24px */
-  --leading-body: 1.25rem; /* 20px */
-  --leading-caption: 1rem; /* 16px */
+  --leading-h1: 2rem;
+  /* 32px */
+  --leading-h2: 1.75rem;
+  /* 28px */
+  --leading-h3: 1.5rem;
+  /* 24px */
+  --leading-body: 1.25rem;
+  /* 20px */
+  --leading-caption: 1rem;
+  /* 16px */
 
   /* Spacing Scale */
-  --space-1: 0.25rem; /* 4px */
-  --space-2: 0.5rem; /* 8px */
-  --space-3: 0.75rem; /* 12px */
-  --space-4: 1rem; /* 16px */
-  --space-6: 1.5rem; /* 24px */
-  --space-8: 2rem; /* 32px */
-  --space-12: 3rem; /* 48px */
+  --space-1: 0.25rem;
+  /* 4px */
+  --space-2: 0.5rem;
+  /* 8px */
+  --space-3: 0.75rem;
+  /* 12px */
+  --space-4: 1rem;
+  /* 16px */
+  --space-6: 1.5rem;
+  /* 24px */
+  --space-8: 2rem;
+  /* 32px */
+  --space-12: 3rem;
+  /* 48px */
 
   /* Shadows (Calm, subtle) */
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -44,17 +61,24 @@
     0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
 
   /* Brand Colors - Indigo */
-  --brand: oklch(0.585 0.233 277); /* #6366f1 */
-  --brand-hover: oklch(0.518 0.233 277); /* Darker on hover */
-  --brand-light: oklch(0.932 0.032 277); /* Light accent bg */
-  --brand-foreground: oklch(0.985 0 0); /* White text on brand */
+  --brand: oklch(0.585 0.233 277);
+  /* #6366f1 */
+  --brand-hover: oklch(0.518 0.233 277);
+  /* Darker on hover */
+  --brand-light: oklch(0.932 0.032 277);
+  /* Light accent bg */
+  --brand-foreground: oklch(0.985 0 0);
+  /* White text on brand */
 
   /* Semantic Colors */
-  --success: oklch(0.648 0.15 160); /* Green */
+  --success: oklch(0.648 0.15 160);
+  /* Green */
   --success-light: oklch(0.95 0.05 160);
-  --warning: oklch(0.795 0.184 86); /* Yellow */
+  --warning: oklch(0.795 0.184 86);
+  /* Yellow */
   --warning-light: oklch(0.97 0.05 86);
-  --error: oklch(0.628 0.258 29); /* Red */
+  --error: oklch(0.628 0.258 29);
+  /* Red */
   --error-light: oklch(0.95 0.05 29);
 
   /* Theme color mappings */
@@ -109,27 +133,30 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
+  /* Indigo primary - from Shadcn Nova preset */
+  --primary: oklch(0.51 0.23 277);
+  --primary-foreground: oklch(0.96 0.02 272);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: oklch(0.58 0.22 27);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  /* Indigo charts */
+  --chart-1: oklch(0.79 0.10 275);
+  --chart-2: oklch(0.68 0.16 277);
+  --chart-3: oklch(0.59 0.20 277);
+  --chart-4: oklch(0.51 0.23 277);
+  --chart-5: oklch(0.46 0.21 277);
+  /* Sidebar */
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.51 0.23 277);
+  --sidebar-primary-foreground: oklch(0.96 0.02 272);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
@@ -143,27 +170,30 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
+  /* Indigo primary - from Shadcn Nova preset */
+  --primary: oklch(0.59 0.20 277);
+  --primary-foreground: oklch(0.96 0.02 272);
+  --secondary: oklch(0.274 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
+  --accent: oklch(0.371 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  /* Indigo charts */
+  --chart-1: oklch(0.79 0.10 275);
+  --chart-2: oklch(0.68 0.16 277);
+  --chart-3: oklch(0.59 0.20 277);
+  --chart-4: oklch(0.51 0.23 277);
+  --chart-5: oklch(0.46 0.21 277);
+  /* Sidebar */
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.68 0.16 277);
+  --sidebar-primary-foreground: oklch(0.96 0.02 272);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
@@ -174,6 +204,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

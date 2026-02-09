@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   Upload,
+  ImageDown,
   Plus,
   Folder,
   FolderOpen,
@@ -199,7 +200,7 @@ export default function DropsPage() {
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([
-    { name: "My Files", folderId: null },
+    { name: "Drops", folderId: null },
   ]);
   // Selection mode state
   const [selectionMode, setSelectionMode] = useState(false);
@@ -408,8 +409,8 @@ export default function DropsPage() {
       <div className="border-b bg-background">
         <div className="p-4 md:p-6 space-y-4">
           <PageHeader
-            title="My Drive"
-            description="Manage your uploaded files and folders"
+            title="Drops"
+            description="Upload and manage your files"
           >
             <Button onClick={() => setUploadModalOpen(true)}>
               <Upload className="h-4 w-4 mr-2" />
@@ -595,10 +596,6 @@ export default function DropsPage() {
                     {selectionMode ? "Cancel" : "Select"}
                   </span>
                 </Button>
-                <Button onClick={() => setUploadModalOpen(true)} size="sm">
-                  <Upload className="w-4 h-4" />
-                  <span className="hidden sm:inline ml-1">Upload</span>
-                </Button>
               </div>
             </div>
           )}
@@ -701,8 +698,8 @@ export default function DropsPage() {
                       className={cn(
                         "transition-all",
                         selectionMode &&
-                          isSelected &&
-                          "ring-2 ring-primary rounded-xl",
+                        isSelected &&
+                        "ring-2 ring-primary rounded-xl",
                       )}
                       onClick={
                         selectionMode
