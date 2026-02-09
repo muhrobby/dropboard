@@ -25,7 +25,7 @@ const navItems = [
   { href: "/dashboard/team", label: "Team", icon: Users },
   { href: "/dashboard/activity", label: "Activity", icon: Activity },
   { href: "/dashboard/trash", label: "Trash", icon: Trash2 },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard/settings/billing", label: "Billing", icon: Settings },
   { href: "/dashboard/profile", label: "Profile", icon: UserCircle },
 ];
 

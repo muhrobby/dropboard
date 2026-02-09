@@ -13,6 +13,7 @@ import {
 } from "@/lib/api-helpers";
 import { createWorkspaceSchema } from "@/lib/validations/workspace";
 import { AppError } from "@/lib/errors";
+import { canCreateWorkspace } from "@/lib/tier-guard";
 
 export async function GET() {
   try {
@@ -38,6 +39,20 @@ export async function POST(request: NextRequest) {
         .map((i) => i.message)
         .join(", ");
       return validationErrorResponse(message);
+    }
+
+    // Check tier limits
+    const workspaces = await listUserWorkspaces(session.user.id);
+    const tierCheck = await canCreateWorkspace(
+      session.user.id,
+      workspaces.length,
+      true // Assuming created via this API is always a "team" workspace context or counts towards total
+    );
+
+    if (!tierCheck.allowed) {
+      return validationErrorResponse(
+        `Upgrade plan to create more workspaces. Limit: ${tierCheck.limit}`
+      );
     }
 
     const workspace = await createTeamWorkspace(

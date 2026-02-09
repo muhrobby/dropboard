@@ -558,11 +558,12 @@ function verifyDOKUWebhook(req: Request): boolean {
 - [x] Seed script for pricing tiers and gateways (`db/seed.ts`)
 
 
-### Phase 3: Product UI - Wallet (Week 5-6)
-- [ ] Wallet balance display
-- [ ] Top-up flow UI
-- [ ] Transaction history page
-- [ ] Subscription management
+### Phase 3: Product UI - Wallet (Week 5-6) ✅
+- [x] Wallet balance display (`components/wallet/wallet-balance.tsx`)
+- [x] Top-up UI & Flow (`components/wallet/topup-modal.tsx`)
+- [x] Transaction history view (`components/wallet/transaction-history.tsx`)
+- [x] Billing page integration (`app/dashboard/settings/billing/page.tsx`)
+- [x] Sidebar update
 
 ### Phase 4: Admin Portal (Week 7-8)
 - [ ] Orders menu
