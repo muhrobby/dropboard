@@ -88,3 +88,62 @@ export function usePermanentDeleteItem() {
     },
   });
 }
+
+// Batch operations
+type BatchResult = {
+  deleted?: number;
+  restored?: number;
+  total: number;
+  permanent?: boolean;
+};
+
+async function batchRestoreItems(ids: string[]): Promise<BatchResult> {
+  const res = await fetch("/api/v1/trash/batch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids }),
+  });
+  const json: ApiResponse<BatchResult> = await res.json();
+  if (!json.success) {
+    throw new Error(
+      "error" in json ? json.error.message : "Failed to restore items",
+    );
+  }
+  return json.data;
+}
+
+async function batchPermanentDeleteItems(ids: string[]): Promise<BatchResult> {
+  const res = await fetch("/api/v1/trash/batch", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids }),
+  });
+  const json: ApiResponse<BatchResult> = await res.json();
+  if (!json.success) {
+    throw new Error(
+      "error" in json ? json.error.message : "Failed to delete items",
+    );
+  }
+  return json.data;
+}
+
+export function useBatchRestoreItems() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: batchRestoreItems,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["trash"] });
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+    },
+  });
+}
+
+export function useBatchPermanentDeleteItems() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: batchPermanentDeleteItems,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["trash"] });
+    },
+  });
+}

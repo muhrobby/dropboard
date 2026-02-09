@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { NoteDetailModal } from "./note-detail-modal";
 import { useDeleteItem } from "@/hooks/use-items";
 import type { ItemResponse } from "@/types/api";
 import { toast } from "sonner";
@@ -29,6 +30,7 @@ function formatDate(dateStr: string): string {
 
 export function NoteCard({ item }: NoteCardProps) {
   const [showDelete, setShowDelete] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
   const deleteItem = useDeleteItem();
 
   function handleDelete() {
@@ -43,13 +45,16 @@ export function NoteCard({ item }: NoteCardProps) {
 
   return (
     <>
-      <Card className="group p-4 space-y-2">
+      <Card
+        className="group p-4 space-y-2 cursor-pointer transition-colors hover:bg-muted/50"
+        onClick={() => setShowDetail(true)}
+      >
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <StickyNote className="h-4 w-4 text-muted-foreground shrink-0" />
             <p className="text-sm font-medium truncate">{item.title}</p>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
             <span className="text-xs text-muted-foreground hidden sm:inline">
               {formatDate(item.createdAt)}
             </span>
@@ -92,6 +97,12 @@ export function NoteCard({ item }: NoteCardProps) {
           </div>
         )}
       </Card>
+
+      <NoteDetailModal
+        item={item}
+        open={showDetail}
+        onOpenChange={setShowDetail}
+      />
 
       <ConfirmDialog
         open={showDelete}

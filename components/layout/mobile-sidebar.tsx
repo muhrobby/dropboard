@@ -10,6 +10,7 @@ import {
   Activity,
   Settings,
   X,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/dashboard/search", label: "Search", icon: Search },
   { href: "/dashboard/team", label: "Team", icon: Users },
   { href: "/dashboard/activity", label: "Activity", icon: Activity },
+  { href: "/dashboard/trash", label: "Trash", icon: Trash2 },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 

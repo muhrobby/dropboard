@@ -6,6 +6,7 @@ import {
   MoreVertical,
   Trash2,
   Copy,
+  Eye,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { LinkDetailModal } from "./link-detail-modal";
 import { useDeleteItem } from "@/hooks/use-items";
 import type { ItemResponse } from "@/types/api";
 import { toast } from "sonner";
@@ -52,6 +54,7 @@ function formatDate(dateStr: string): string {
 
 export function LinkCard({ item }: LinkCardProps) {
   const [showDelete, setShowDelete] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
   const deleteItem = useDeleteItem();
 
   const url = item.content || "";
@@ -81,7 +84,7 @@ export function LinkCard({ item }: LinkCardProps) {
     <>
       <Card
         className="group cursor-pointer p-4 transition-colors hover:bg-muted/50"
-        onClick={handleOpen}
+        onClick={() => setShowDetail(true)}
       >
         <div className="flex items-start gap-3">
           {/* Favicon */}
@@ -144,6 +147,10 @@ export function LinkCard({ item }: LinkCardProps) {
                   <Copy className="mr-2 h-3.5 w-3.5" />
                   Copy URL
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowDetail(true)}>
+                  <Eye className="mr-2 h-3.5 w-3.5" />
+                  View Details
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => setShowDelete(true)}
@@ -157,6 +164,12 @@ export function LinkCard({ item }: LinkCardProps) {
           </div>
         </div>
       </Card>
+
+      <LinkDetailModal
+        item={item}
+        open={showDetail}
+        onOpenChange={setShowDetail}
+      />
 
       <ConfirmDialog
         open={showDelete}

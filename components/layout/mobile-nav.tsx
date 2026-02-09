@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Activity, Settings } from "lucide-react";
+import { Activity, Settings, Trash2 } from "lucide-react";
 
 const mainNavItems = [
   { href: "/dashboard/drops", label: "Drops", icon: ImageDown },
@@ -21,6 +21,7 @@ const mainNavItems = [
 
 const moreNavItems = [
   { href: "/dashboard/activity", label: "Activity", icon: Activity },
+  { href: "/dashboard/trash", label: "Trash", icon: Trash2 },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
