@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useActivity } from "@/hooks/use-members";
+import { PageHeader } from "@/components/patterns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -148,144 +149,151 @@ export default function ActivityPage() {
   }, [allLogs]);
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 pb-20 md:pb-6">
-      <div>
-        <h1 className="text-2xl font-bold">Activity</h1>
-        <p className="text-sm text-muted-foreground">
-          Recent actions in this workspace
-        </p>
-      </div>
-
-      {/* Stat Cards */}
-      {!isLoading && allLogs.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-in fade-in slide-in-from-bottom-2">
-          <StatCard
-            icon={Zap}
-            label="Total Actions"
-            value={stats.totalActions}
-            subtext="All activity"
-            color="text-blue-500"
-            bgColor="bg-blue-500/10"
-          />
-          <StatCard
-            icon={Upload}
-            label="Items Created"
-            value={stats.uploads}
-            subtext="New items added"
-            color="text-green-500"
-            bgColor="bg-green-500/10"
-          />
-          <StatCard
-            icon={Pin}
-            label="Items Pinned"
-            value={stats.pins}
-            subtext={`${stats.unpins} unpinned`}
-            color="text-purple-500"
-            bgColor="bg-purple-500/10"
-          />
-          <StatCard
-            icon={Users}
-            label="Active Members"
-            value={stats.uniqueActors}
-            subtext="Participating"
-            color="text-orange-500"
-            bgColor="bg-orange-500/10"
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="border-b bg-background">
+        <div className="p-4 md:p-6">
+          <PageHeader
+            title="Activity"
+            description="Recent actions in this workspace"
           />
         </div>
-      )}
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Activity className="h-5 w-5" />
-            Timeline
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex gap-3">
-                  <Skeleton className="h-8 w-8 rounded-full shrink-0" />
-                  <div className="flex-1 space-y-1">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : allLogs.length === 0 ? (
-            <div className="flex flex-col items-center py-12 text-center">
-              <Activity className="h-10 w-10 text-muted-foreground mb-3" />
-              <p className="text-sm text-muted-foreground">
-                No activity yet. Actions like uploads, pins, and team changes will appear here.
-              </p>
-            </div>
-          ) : (
-            <div className="relative">
-              {/* Timeline line */}
-              <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
+      {/* Content */}
+      <div className="flex-1 overflow-auto p-4 md:p-6 space-y-6 pb-20 md:pb-6">
 
+        {/* Stat Cards */}
+        {!isLoading && allLogs.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-in fade-in slide-in-from-bottom-2">
+            <StatCard
+              icon={Zap}
+              label="Total Actions"
+              value={stats.totalActions}
+              subtext="All activity"
+              color="text-blue-500"
+              bgColor="bg-blue-500/10"
+            />
+            <StatCard
+              icon={Upload}
+              label="Items Created"
+              value={stats.uploads}
+              subtext="New items added"
+              color="text-green-500"
+              bgColor="bg-green-500/10"
+            />
+            <StatCard
+              icon={Pin}
+              label="Items Pinned"
+              value={stats.pins}
+              subtext={`${stats.unpins} unpinned`}
+              color="text-purple-500"
+              bgColor="bg-purple-500/10"
+            />
+            <StatCard
+              icon={Users}
+              label="Active Members"
+              value={stats.uniqueActors}
+              subtext="Participating"
+              color="text-orange-500"
+              bgColor="bg-orange-500/10"
+            />
+          </div>
+        )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Activity className="h-5 w-5" />
+              Timeline
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
               <div className="space-y-4">
-                {allLogs.map((log) => {
-                  const config = actionConfig[log.action as ActivityAction] ?? {
-                    icon: Activity,
-                    label: log.action,
-                    color: "text-muted-foreground",
-                  };
-                  const Icon = config.icon;
-                  const detail = getMetadataLabel(
-                    log.action as ActivityAction,
-                    log.metadata
-                  );
-
-                  return (
-                    <div key={log.id} className="relative flex gap-3 pl-1">
-                      {/* Timeline dot */}
-                      <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-background">
-                        <Icon className={`h-4 w-4 ${config.color}`} />
-                      </div>
-
-                      <div className="flex-1 min-w-0 pt-0.5">
-                        <p className="text-sm">
-                          <span className="font-medium">
-                            {log.actor?.name ?? "Unknown"}
-                          </span>{" "}
-                          <span className="text-muted-foreground">
-                            {config.label}
-                          </span>
-                          {detail && (
-                            <span className="text-muted-foreground">
-                              {" "}
-                              {detail}
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {timeAgo(log.createdAt)}
-                        </p>
-                      </div>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex gap-3">
+                    <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                    <div className="flex-1 space-y-1">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-24" />
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
+            ) : allLogs.length === 0 ? (
+              <div className="flex flex-col items-center py-12 text-center">
+                <Activity className="h-10 w-10 text-muted-foreground mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  No activity yet. Actions like uploads, pins, and team changes will appear here.
+                </p>
+              </div>
+            ) : (
+              <div className="relative">
+                {/* Timeline line */}
+                <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
 
-              {hasNextPage && (
-                <div className="mt-6 flex justify-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fetchNextPage()}
-                    disabled={isFetchingNextPage}
-                  >
-                    {isFetchingNextPage ? "Loading..." : "Load More"}
-                  </Button>
+                <div className="space-y-4">
+                  {allLogs.map((log) => {
+                    const config = actionConfig[log.action as ActivityAction] ?? {
+                      icon: Activity,
+                      label: log.action,
+                      color: "text-muted-foreground",
+                    };
+                    const Icon = config.icon;
+                    const detail = getMetadataLabel(
+                      log.action as ActivityAction,
+                      log.metadata
+                    );
+
+                    return (
+                      <div key={log.id} className="relative flex gap-3 pl-1">
+                        {/* Timeline dot */}
+                        <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-background">
+                          <Icon className={`h-4 w-4 ${config.color}`} />
+                        </div>
+
+                        <div className="flex-1 min-w-0 pt-0.5">
+                          <p className="text-sm">
+                            <span className="font-medium">
+                              {log.actor?.name ?? "Unknown"}
+                            </span>{" "}
+                            <span className="text-muted-foreground">
+                              {config.label}
+                            </span>
+                            {detail && (
+                              <span className="text-muted-foreground">
+                                {" "}
+                                {detail}
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {timeAgo(log.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
+                {hasNextPage && (
+                  <div className="mt-6 flex justify-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fetchNextPage()}
+                      disabled={isFetchingNextPage}
+                    >
+                      {isFetchingNextPage ? "Loading..." : "Load More"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
