@@ -13,7 +13,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:pull": "drizzle-kit introspect"
+    "db:pull": "drizzle-kit introspect",
+    "db:seed": "npx tsx db/seed.ts"
   },
   "dependencies": {
     "@radix-ui/react-progress": "^1.1.8",

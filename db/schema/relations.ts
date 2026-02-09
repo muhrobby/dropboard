@@ -7,8 +7,12 @@ import { invites } from "./invites";
 import { activityLogs } from "./activity-logs";
 import { users, sessions, accounts, verifications } from "./auth";
 import { webhooks, webhookLogs } from "./webhooks";
+import { wallets, walletTransactions } from "./wallets";
+import { subscriptions, paymentGatewayConfig } from "./subscriptions";
+import { topupOrders } from "./topup-orders";
+import { pricingTiers } from "./pricing-tiers";
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   sessions: many(sessions),
   accounts: many(accounts),
   workspaceMembers: many(workspaceMembers),
@@ -17,6 +21,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   sentInvites: many(invites, { relationName: "inviter" }),
   activities: many(activityLogs, { relationName: "actor" }),
   webhooks: many(webhooks, { relationName: "webhookCreator" }),
+  wallet: one(wallets),
+  subscription: one(subscriptions),
+  topupOrders: many(topupOrders),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -125,5 +132,48 @@ export const webhookLogsRelations = relations(webhookLogs, ({ one }) => ({
   webhook: one(webhooks, {
     fields: [webhookLogs.webhookId],
     references: [webhooks.id],
+  }),
+}));
+
+// Wallet relations
+export const walletsRelations = relations(wallets, ({ one, many }) => ({
+  user: one(users, {
+    fields: [wallets.userId],
+    references: [users.id],
+  }),
+  transactions: many(walletTransactions),
+}));
+
+export const walletTransactionsRelations = relations(
+  walletTransactions,
+  ({ one }) => ({
+    wallet: one(wallets, {
+      fields: [walletTransactions.walletId],
+      references: [wallets.id],
+    }),
+  })
+);
+
+// Subscription relations
+export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [subscriptions.userId],
+    references: [users.id],
+  }),
+  tier: one(pricingTiers, {
+    fields: [subscriptions.tierId],
+    references: [pricingTiers.id],
+  }),
+}));
+
+export const pricingTiersRelations = relations(pricingTiers, ({ many }) => ({
+  subscriptions: many(subscriptions),
+}));
+
+// Top-up order relations
+export const topupOrdersRelations = relations(topupOrders, ({ one }) => ({
+  user: one(users, {
+    fields: [topupOrders.userId],
+    references: [users.id],
   }),
 }));
