@@ -11,6 +11,7 @@ import {
   Settings,
   X,
   Trash2,
+  UserCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
@@ -26,6 +27,7 @@ const navItems = [
   { href: "/dashboard/activity", label: "Activity", icon: Activity },
   { href: "/dashboard/trash", label: "Trash", icon: Trash2 },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard/profile", label: "Profile", icon: UserCircle },
 ];
 
 export function MobileSidebar() {
@@ -73,7 +75,7 @@ export function MobileSidebar() {
                   className={cn(
                     "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      ? "bg-primary/10 text-primary"
                       : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                   )}
                 >
