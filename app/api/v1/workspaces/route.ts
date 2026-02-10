@@ -41,12 +41,13 @@ export async function POST(request: NextRequest) {
       return validationErrorResponse(message);
     }
 
-    // Check tier limits
+    // Check tier limits - count only team workspaces for team workspace check
     const workspaces = await listUserWorkspaces(session.user.id);
+    const teamWorkspaces = workspaces.filter(w => w.type === "team");
     const tierCheck = await canCreateWorkspace(
       session.user.id,
-      workspaces.length,
-      true // Assuming created via this API is always a "team" workspace context or counts towards total
+      teamWorkspaces.length,
+      true // isTeamWorkspace = true
     );
 
     if (!tierCheck.allowed) {

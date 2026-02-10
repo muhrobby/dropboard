@@ -6,11 +6,10 @@ import { saveFile, deleteFile, getAbsolutePath } from "@/lib/file-storage";
 import { NotFoundError, ValidationError, QuotaExceededError } from "@/lib/errors";
 import {
   ALLOWED_FILE_TYPES,
-  MAX_UPLOAD_SIZE_BYTES,
-  FREE_STORAGE_LIMIT_BYTES,
 } from "@/lib/constants";
 import { validateFileMimeType, sanitizeFilename, FileValidationError } from "@/lib/file-validator";
 import { queueScan, isScanEnabled } from "@/services/virus-scan-service";
+import { canUploadFile } from "@/lib/tier-guard";
 
 type UploadResult = {
   fileAssetId: string;
@@ -31,12 +30,9 @@ export async function uploadFile(
   userId: string,
   file: File
 ): Promise<UploadResult> {
-  // Security: Validate file size
-  if (file.size > MAX_UPLOAD_SIZE_BYTES) {
-    throw new ValidationError(
-      `File size exceeds the maximum of ${MAX_UPLOAD_SIZE_BYTES / (1024 * 1024)}MB.`
-    );
-  }
+  // Note: File size limit is enforced by tier-guard (canUploadFile) below.
+  // We removed the hardcoded MAX_UPLOAD_SIZE_BYTES check to allow Pro/Business tiers
+  // to upload larger files as defined in their plan.
 
   // Security: Validate MIME type using magic bytes detection
   // This prevents MIME type spoofing where user renames file extension
@@ -68,10 +64,24 @@ export async function uploadFile(
       throw new NotFoundError("Workspace not found");
     }
 
-    // Check quota with locked row
-    if (workspace.storageUsedBytes + file.size > FREE_STORAGE_LIMIT_BYTES) {
+    // Check quota using tier-guard (dynamic limits)
+    // Note: We need to pass the current used bytes + file size to check against the limit
+    const quotaCheck = await canUploadFile(
+      userId, // Use the uploader's ID to check THEIR tier limits
+      workspace.storageUsedBytes,
+      file.size
+    );
+
+    if (!quotaCheck.allowed) {
+        // Distinguish between storage limit and file size limit errors if possible, 
+        // but tier-guard combines them. We can infer based on the file size.
+        if (file.size > quotaCheck.maxFileSize) {
+             throw new ValidationError(
+                `File size exceeds the maximum of ${(quotaCheck.maxFileSize / (1024 * 1024)).toFixed(0)}MB for your ${quotaCheck.tierName} plan.`
+            );
+        }
       throw new QuotaExceededError(
-        "Workspace storage quota exceeded. Delete some files to free up space."
+        `Workspace storage quota exceeded for ${quotaCheck.tierName} plan. Limit: ${(quotaCheck.limit / (1024 * 1024 * 1024)).toFixed(1)}GB`
       );
     }
 

@@ -20,7 +20,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { FREE_STORAGE_LIMIT_BYTES } from "@/lib/constants";
 import {
   PageHeader,
   MetricCard,
@@ -31,6 +30,7 @@ import {
   OverviewSide,
   SectionHeader,
 } from "@/components/patterns";
+import { useSubscription } from "@/hooks/use-subscription";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -95,12 +95,19 @@ export default function DashboardPage() {
   const workspace = useWorkspaceStore((s) => s.getActiveWorkspace());
   const { data: workspaces, isLoading: workspacesLoading } = useWorkspaces();
   const { data: members } = useMembers();
+  const { data: subscription } = useSubscription();
 
   const storageUsed = workspace?.storageUsedBytes ?? 0;
+  
+  // Use dynamic limit from subscription or default to 2GB if not loaded yet
+  const storageLimit = subscription?.usage.storageLimit ?? 2 * 1024 * 1024 * 1024;
+  
   const storagePercent = Math.min(
     100,
-    Math.round((storageUsed / FREE_STORAGE_LIMIT_BYTES) * 100),
+    Math.round((storageUsed / storageLimit) * 100),
   );
+
+  const planName = subscription?.plan ?? "Free";
 
   if (workspacesLoading) {
     return (
@@ -162,8 +169,8 @@ export default function DashboardPage() {
           />
           <MetricCard
             label="Storage Limit"
-            value={formatBytes(FREE_STORAGE_LIMIT_BYTES)}
-            change="Free tier"
+            value={formatBytes(storageLimit)}
+            change={`${planName} tier`}
             trend="up"
             icon={<TrendingUp className="h-4 w-4" />}
           />
@@ -185,7 +192,7 @@ export default function DashboardPage() {
                   <span className="text-muted-foreground">Used</span>
                   <span className="font-medium tabular-nums">
                     {formatBytes(storageUsed)} /{" "}
-                    {formatBytes(FREE_STORAGE_LIMIT_BYTES)}
+                    {formatBytes(storageLimit)}
                   </span>
                 </div>
                 <Progress value={storagePercent} className="h-2" />

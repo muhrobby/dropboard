@@ -79,9 +79,7 @@ export default function BillingPage() {
                     </TabsContent>
 
                     <TabsContent value="invoices">
-                        <div className="border rounded-lg p-8 text-center text-muted-foreground">
-                            Belum ada invoice langganan.
-                        </div>
+                        <TransactionHistory refreshKey={key} type="subscription" hideTitle />
                     </TabsContent>
                 </Tabs>
             </div>

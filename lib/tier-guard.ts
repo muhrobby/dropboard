@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { pricingTiers, subscriptions } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 export interface TierLimits {
     maxWorkspaces: number;
@@ -28,7 +28,11 @@ export interface TierCheckResult {
  */
 export async function getUserTier(userId: string) {
     const subscription = await db.query.subscriptions.findFirst({
-        where: eq(subscriptions.userId, userId),
+        where: and(
+            eq(subscriptions.userId, userId),
+            eq(subscriptions.status, "active")
+        ),
+        orderBy: [desc(subscriptions.updatedAt)],
         with: {
             tier: true,
         },
@@ -94,10 +98,11 @@ export async function canCreateWorkspace(
 
     if (isTeamWorkspace) {
         // Count team workspaces
-        const allowed = currentWorkspaceCount < limits.maxTeamWorkspaces;
+        const allowed = limits.maxTeamWorkspaces === -1 ||
+            (limits.maxTeamWorkspaces > 0 && currentWorkspaceCount < limits.maxTeamWorkspaces);
         return {
             allowed,
-            limit: limits.maxTeamWorkspaces,
+            limit: limits.maxTeamWorkspaces === -1 ? Infinity : limits.maxTeamWorkspaces,
             current: currentWorkspaceCount,
             tierName: tier?.displayName || "Free",
             upgradeRequired: !allowed,
@@ -106,10 +111,11 @@ export async function canCreateWorkspace(
 
     // Personal workspaces
     const totalLimit = limits.maxWorkspaces;
-    const allowed = currentWorkspaceCount < totalLimit;
+    const allowed = totalLimit === -1 ||
+        (totalLimit > 0 && currentWorkspaceCount < totalLimit);
     return {
         allowed,
-        limit: totalLimit,
+        limit: totalLimit === -1 ? Infinity : totalLimit,
         current: currentWorkspaceCount,
         tierName: tier?.displayName || "Free",
         upgradeRequired: !allowed,

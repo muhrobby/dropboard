@@ -36,11 +36,11 @@ export async function GET(request: NextRequest) {
             return validationErrorResponse(message);
         }
 
-        const { page, limit } = queryResult.data;
+        const { page, limit, type } = queryResult.data;
         const offset = (page - 1) * limit;
 
         const wallet = await getOrCreateWallet(session.user.id);
-        const transactions = await getWalletTransactions(wallet.id, limit, offset);
+        const transactions = await getWalletTransactions(wallet.id, limit, offset, type);
 
         // Format transactions for response
         const formattedTransactions = transactions.map((tx) => ({

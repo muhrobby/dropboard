@@ -12,8 +12,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { ArrowDownLeft, ArrowUpRight, RefreshCw, AlertCircle } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, RefreshCw } from "lucide-react";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface Transaction {
     id: string;
@@ -38,16 +39,23 @@ interface TransactionsResponse {
 
 interface TransactionHistoryProps {
     refreshKey?: number;
+    type?: "topup" | "subscription" | "refund";
+    title?: string;
+    hideTitle?: boolean;
 }
 
-export function TransactionHistory({ refreshKey }: TransactionHistoryProps) {
+export function TransactionHistory({ refreshKey, type, title, hideTitle }: TransactionHistoryProps) {
     const [page, setPage] = useState(1);
     const limit = 10;
 
     const { data, isLoading } = useQuery<TransactionsResponse>({
-        queryKey: ["wallet-history", page, refreshKey],
+        queryKey: ["wallet-history", page, refreshKey, type],
         queryFn: async () => {
-            const res = await fetch(`/api/v1/wallet/history?page=${page}&limit=${limit}`);
+            let url = `/api/v1/wallet/history?page=${page}&limit=${limit}`;
+            if (type) {
+                url += `&type=${type}`;
+            }
+            const res = await fetch(url);
             if (!res.ok) throw new Error("Failed to fetch history");
             const json = await res.json();
             return json;
@@ -81,9 +89,11 @@ export function TransactionHistory({ refreshKey }: TransactionHistoryProps) {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Riwayat Transaksi</h3>
-            </div>
+            {!hideTitle && (
+                <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium">{title || "Riwayat Transaksi"}</h3>
+                </div>
+            )}
 
             <div className="border rounded-md">
                 <Table>
@@ -171,6 +181,3 @@ export function TransactionHistory({ refreshKey }: TransactionHistoryProps) {
         </div>
     );
 }
-
-// Need cn util
-import { cn } from "@/lib/utils";

@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Menu, Search } from "lucide-react";
 import { useUIStore } from "@/stores/ui-store";
 import Link from "next/link";
+import { TierBadge } from "@/components/layout/tier-badge";
 
 export function Topbar() {
   const router = useRouter();
@@ -71,10 +72,15 @@ export function Topbar() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           <div className="px-2 py-1.5">
-            <p className="text-sm font-medium">{session?.user?.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {session?.user?.email}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-medium">{session?.user?.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {session?.user?.email}
+                </p>
+              </div>
+              <TierBadge />
+            </div>
           </div>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>

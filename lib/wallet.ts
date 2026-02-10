@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { wallets, walletTransactions } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export type TransactionType = "topup" | "subscription" | "refund";
 
@@ -111,10 +111,15 @@ export async function addWalletTransaction(params: CreateTransactionParams) {
 export async function getWalletTransactions(
     walletId: string,
     limit = 20,
-    offset = 0
+    offset = 0,
+    type?: TransactionType
 ) {
+    const whereCondition = type
+        ? and(eq(walletTransactions.walletId, walletId), eq(walletTransactions.type, type))
+        : eq(walletTransactions.walletId, walletId);
+
     return await db.query.walletTransactions.findMany({
-        where: eq(walletTransactions.walletId, walletId),
+        where: whereCondition,
         orderBy: (tx, { desc }) => [desc(tx.createdAt)],
         limit,
         offset,

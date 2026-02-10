@@ -20,8 +20,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import { FREE_STORAGE_LIMIT_BYTES } from "@/lib/constants";
 import { PageHeader } from "@/components/patterns";
+import { useSubscription } from "@/hooks/use-subscription";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -36,14 +36,19 @@ export default function SettingsPage() {
   const workspace = useWorkspaceStore((s) => s.getActiveWorkspace());
   const { refetch: refetchWorkspaces } = useWorkspaces();
   const { data: members } = useMembers();
+  const { data: subscription } = useSubscription();
+  
   const [name, setName] = useState(workspace?.name ?? "");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const storageUsed = workspace?.storageUsedBytes ?? 0;
+  // Use dynamic limit from subscription or default to 2GB if not loaded yet
+  const storageLimit = subscription?.usage.storageLimit ?? 2 * 1024 * 1024 * 1024;
+  
   const storagePercent = Math.min(
     100,
-    Math.round((storageUsed / FREE_STORAGE_LIMIT_BYTES) * 100),
+    Math.round((storageUsed / storageLimit) * 100),
   );
 
   async function handleSave() {
@@ -149,7 +154,7 @@ export default function SettingsPage() {
           <div className="flex justify-between text-sm">
             <span>{formatBytes(storageUsed)} used</span>
             <span className="text-muted-foreground">
-              {formatBytes(FREE_STORAGE_LIMIT_BYTES)} total
+              {formatBytes(storageLimit)} total
             </span>
           </div>
           <div className="h-2 rounded-full bg-muted overflow-hidden">
