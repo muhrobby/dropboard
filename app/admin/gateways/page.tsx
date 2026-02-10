@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Settings2, CheckCircle2, XCircle, Shield } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { GatewayConfigModal } from "@/components/admin/gateway-config-modal";
 
 interface Gateway {
     id: string;
@@ -17,12 +18,14 @@ interface Gateway {
     isActive: boolean;
     isPrimary: boolean;
     supportedMethods: string[];
-    config: Record<string, string> | null;
+    config: Record<string, any> | null;
 }
 
 export default function GatewaysPage() {
     const queryClient = useQueryClient();
     const [updatingId, setUpdatingId] = useState<string | null>(null);
+    const [selectedGateway, setSelectedGateway] = useState<Gateway | null>(null);
+    const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
     const { data, isLoading } = useQuery<{ success: boolean; data: Gateway[] }>({
         queryKey: ["admin-gateways"],
@@ -62,6 +65,11 @@ export default function GatewaysPage() {
     const handleSetPrimary = (id: string) => {
         setUpdatingId(id);
         updateMutation.mutate({ id, isPrimary: true, isActive: true });
+    };
+
+    const handleConfigure = (gateway: Gateway) => {
+        setSelectedGateway(gateway);
+        setIsConfigModalOpen(true);
     };
 
     return (
@@ -156,6 +164,7 @@ export default function GatewaysPage() {
                                             <Button
                                                 variant="outline"
                                                 size="sm"
+                                                onClick={() => handleConfigure(gateway)}
                                                 disabled={!gateway.isActive}
                                             >
                                                 <Settings2 className="w-4 h-4 mr-2" />
@@ -189,6 +198,12 @@ export default function GatewaysPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            <GatewayConfigModal
+                gateway={selectedGateway}
+                open={isConfigModalOpen}
+                onOpenChange={setIsConfigModalOpen}
+            />
         </div>
     );
 }

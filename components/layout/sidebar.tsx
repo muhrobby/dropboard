@@ -74,11 +74,22 @@ export function AppSidebar() {
         <nav className="space-y-1">
           {navItems.map((item) => {
             // Dashboard should only be active when exactly on /dashboard
-            const isActive =
-              item.href === "/dashboard"
-                ? pathname === "/dashboard"
-                : pathname === item.href ||
-                  pathname.startsWith(item.href + "/");
+            const isExactDashboard = item.href === "/dashboard" && pathname === "/dashboard";
+            const isPathMatch =
+              item.href !== "/dashboard" &&
+              (pathname === item.href || pathname.startsWith(item.href + "/"));
+
+            // Check if a more specific menu item exists for this path
+            // This prevents "Settings" from being active when "Settings > Billing" is active
+            const hasMoreSpecificMatch = navItems.some(
+              (otherItem) =>
+                otherItem !== item &&
+                otherItem.href.startsWith(item.href + "/") &&
+                (pathname === otherItem.href ||
+                  pathname.startsWith(otherItem.href + "/")),
+            );
+
+            const isActive = isExactDashboard || (isPathMatch && !hasMoreSpecificMatch);
             return (
               <Link
                 key={item.href}

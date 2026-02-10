@@ -392,13 +392,32 @@ Navigate to: `http://localhost:3004/admin`
 | Phase 2: Payment Gateway Integration | ✅ Complete | 100% |
 | Phase 3: Product UI - Wallet | ✅ Complete | 100% |
 | Phase 4: Admin Portal | ✅ Complete | 100% |
-| Phase 5: Auto-Renewal & Polish | Pending | 0% |
+| Phase 5: Auto-Renewal & Polish | 🔄 In Progress | 25% |
 
-**Overall Progress: Phase 1-4 Complete (80% of total plan)**
+**Overall Progress: Phase 1-4 Complete, Phase 5 In Progress (85% of total plan)**
 
 ---
 
 ## Recent Updates (February 10, 2026)
+
+### Phase 5 - Auto-Renewal Cron Job
+**Files Created:**
+- `services/subscription-renewal-service.ts` - Core auto-renewal logic
+- `app/api/v1/cron/subscription-renewal/route.ts` - Cron endpoint
+- `vercel.json` - Vercel cron configuration (daily at 17:00 UTC / 00:00 WIB)
+
+**Features:**
+- Daily subscription renewal check
+- Automatic wallet deduction when balance sufficient
+- Reminder emails for insufficient balance (email integration pending)
+- Automatic downgrade to Free tier on expiration
+- Full system logging
+
+**Usage:**
+```bash
+curl -X POST http://localhost:3004/api/v1/cron/subscription-renewal \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
 
 ### Bug Fixes
 1. **Access Denied Screen** - Added clear guidance for stale session users

@@ -21,9 +21,9 @@ export async function GET() {
             ...gw,
             config: gw.config
                 ? Object.keys(gw.config as Record<string, unknown>).reduce((acc, key) => {
-                      acc[key] = "***MASKED***";
-                      return acc;
-                  }, {} as Record<string, string>)
+                    acc[key] = "***MASKED***";
+                    return acc;
+                }, {} as Record<string, string>)
                 : null,
         }));
 
@@ -66,6 +66,18 @@ export async function PUT(request: NextRequest) {
             );
         }
 
+        // Check if gateway exists
+        const existingGateway = await db.query.paymentGatewayConfig.findFirst({
+            where: eq(paymentGatewayConfig.id, id),
+        });
+
+        if (!existingGateway) {
+            return NextResponse.json(
+                { error: "Gateway not found" },
+                { status: 404 }
+            );
+        }
+
         // If setting as primary, unset other primaries
         if (isPrimary) {
             await db
@@ -74,13 +86,31 @@ export async function PUT(request: NextRequest) {
                 .where(eq(paymentGatewayConfig.isPrimary, true));
         }
 
+        // Merge config carefully
+        let newConfig = existingGateway.config;
+        if (config) {
+            const currentConfig = (existingGateway.config as Record<string, unknown>) || {};
+            const incomingConfig = config as Record<string, unknown>;
+
+            newConfig = { ...currentConfig };
+
+            for (const [key, value] of Object.entries(incomingConfig)) {
+                // If value is masked, keep existing value
+                if (value === "***MASKED***") {
+                    continue;
+                }
+                // Update with new value
+                (newConfig as Record<string, unknown>)[key] = value;
+            }
+        }
+
         // Update gateway
         const [updated] = await db
             .update(paymentGatewayConfig)
             .set({
                 isActive: isActive !== undefined ? isActive : undefined,
                 isPrimary: isPrimary !== undefined ? isPrimary : undefined,
-                config: config || undefined,
+                config: newConfig,
                 updatedAt: new Date(),
             })
             .where(eq(paymentGatewayConfig.id, id))

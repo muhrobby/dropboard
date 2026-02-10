@@ -126,25 +126,24 @@ export async function seedPaymentGateways() {
     {
       provider: "xendit",
       displayName: "Xendit",
-      isActive: false, // Admin needs to configure and activate
-      isPrimary: false,
+      isActive: true, // Default to active if keys exist
+      isPrimary: true,
       config: {
-        // These will be set by admin
-        secretKey: "",
-        publicKey: "",
-        callbackToken: "",
+        secretKey: process.env.XENDIT_SECRET_KEY || "",
+        publicKey: process.env.XENDIT_PUBLIC_KEY || "",
+        callbackToken: process.env.XENDIT_CALLBACK_TOKEN || "",
       },
       supportedMethods: ["va", "ewallet", "qris"],
     },
     {
       provider: "doku",
       displayName: "DOKU",
-      isActive: false, // Admin needs to configure and activate
+      isActive: false,
       isPrimary: false,
       config: {
-        // These will be set by admin
-        clientId: "",
-        secretKey: "",
+        clientId: process.env.DOKU_CLIENT_ID || "",
+        secretKey: process.env.DOKU_SECRET_KEY || "",
+        isProduction: process.env.NODE_ENV === "production",
       },
       supportedMethods: ["va", "ewallet", "qris", "retail"],
     },
@@ -159,7 +158,15 @@ export async function seedPaymentGateways() {
       await db.insert(paymentGatewayConfig).values(gateway);
       console.log(`✅ Created gateway config: ${gateway.displayName}`);
     } else {
-      console.log(`⏭️ Gateway config already exists: ${gateway.displayName}`);
+      // Update existing config with new env vars if available
+      await db
+        .update(paymentGatewayConfig)
+        .set({
+          config: gateway.config,
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentGatewayConfig.id, existing.id));
+      console.log(`🔄 Updated gateway config from env: ${gateway.displayName}`);
     }
   }
 }

@@ -589,10 +589,31 @@ function verifyDOKUWebhook(req: Request): boolean {
   - [x] GET /api/v1/me (returns user role & permissions)
 
 ### Phase 5: Auto-Renewal & Polish (Week 9-10)
-- [ ] Cron job for auto-renewal
+- [x] Cron job for auto-renewal (Feb 10, 2026)
 - [ ] Email notifications
 - [ ] Alert system
 - [ ] Testing & security audit
+
+#### Auto-Renewal Implementation Details
+
+**Cron Endpoint:** `POST /api/v1/cron/subscription-renewal`
+
+**Files Created:**
+- `services/subscription-renewal-service.ts` - Core renewal logic
+- `app/api/v1/cron/subscription-renewal/route.ts` - Cron endpoint
+
+**Features:**
+- Daily check for subscriptions expiring within 3 days
+- Automatic wallet deduction and renewal if balance sufficient
+- Reminder emails when balance insufficient (TODO: integrate email service)
+- Automatic downgrade to Free tier when subscription expires without balance
+- Full logging to `system_logs` table
+
+**Testing:**
+```bash
+curl -X POST http://localhost:3004/api/v1/cron/subscription-renewal \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
 
 ---
 
