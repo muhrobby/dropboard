@@ -1,0 +1,43 @@
+{
+  "name": "Dropboard v2",
+  "short_name": "Dropboard",
+  "description": "Drop files, save links, take notes. Quick capture for your team.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    {
+      "name": "Files",
+      "icons": ["ImageDown"]
+    },
+    {
+      "name": "Pins",
+      "icons": ["Bookmark"]
+    },
+    {
+      "name": "Settings",
+      "icons": ["Settings"]
+    },
+    {
+      "name": "Search",
+      "icons": ["Search"]
+    }
+  ]
+}
