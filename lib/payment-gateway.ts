@@ -116,6 +116,8 @@ class XenditGateway implements PaymentGateway {
     }
 
     async createInvoice(params: CreateInvoiceParams): Promise<Invoice> {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3004";
+
         const response = await fetch(`${this.baseUrl}/v2/invoices`, {
             method: "POST",
             headers: {
@@ -128,12 +130,18 @@ class XenditGateway implements PaymentGateway {
                 description: params.description,
                 payer_email: params.customerEmail,
                 invoice_duration: (params.expiresInHours || 24) * 3600,
+                // Add redirect URLs for post-payment flow
+                success_redirect_url: `${appUrl}/dashboard/settings/billing?payment=success`,
+                failure_redirect_url: `${appUrl}/dashboard/settings/billing?payment=failed`,
+                // Callback URL for webhook notification
+                callback_url: `${appUrl}/api/webhooks/xendit/invoice`,
             }),
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(`Xendit error: ${error.message || "Unknown error"}`);
+            const responseText = await response.text();
+            console.error("Xendit API Error:", responseText);
+            throw new Error(`Xendit error: ${responseText}`);
         }
 
         const data = await response.json();
@@ -266,12 +274,23 @@ class DOKUGateway implements PaymentGateway {
         const body = JSON.stringify(requestBody);
         const signature = this.generateSignature(body, timestamp, targetPath, requestId);
 
+        // Debug signature calculation
+        const digest = crypto.createHash("sha256").update(body).digest("base64");
+        const signatureData = `Client-Id:${this.clientId}\nRequest-Id:${requestId}\nRequest-Timestamp:${timestamp}\nRequest-Target:${targetPath}\nDigest:${digest}`;
+
         console.log("📤 DOKU Request:", {
             url: `${this.baseUrl}${targetPath}`,
             clientId: this.clientId,
             environment: this.baseUrl.includes("sandbox") ? "SANDBOX" : "PRODUCTION",
             invoiceNumber: params.externalId,
             amount: params.amount,
+        });
+
+        console.log("🔐 DOKU Signature Debug:", {
+            digest,
+            signaturePrefix: signature.substring(0, 20) + "...",
+            clientId: this.clientId,
+            secretKeyLength: this.secretKey?.length || 0,
         });
 
         const response = await fetch(`${this.baseUrl}${targetPath}`, {
@@ -298,27 +317,23 @@ class DOKUGateway implements PaymentGateway {
 
             console.error("❌ DOKU Payment Error Details:", JSON.stringify(errorDetails, null, 2));
             console.error("❌ DOKU Request Body:", body);
-            console.error("❌ DOKU Request Headers:", {
-                "Client-Id": this.clientId,
-                "Request-Id": requestId,
-                "Request-Timestamp": timestamp,
-                "Request-Target": targetPath,
-            });
+            console.error("❌ DOKU Signature Data:", signatureData);
 
             // Check for common issues
             if (response.status === 401) {
-                throw new Error("DOKU authentication failed. Check your Client ID and Secret Key in admin panel.");
+                throw new Error("DOKU authentication failed (401). Your Client ID or Secret Key is incorrect. Please check in DOKU Dashboard → Credentials.");
             } else if (response.status === 400) {
                 const errorMessages = errorDetails.error_messages || errorDetails.message;
                 const errorMsg = Array.isArray(errorMessages) ? errorMessages.join(", ") : JSON.stringify(errorMessages);
-                throw new Error(`DOKU bad request: ${errorMsg}`);
+                throw new Error(`DOKU bad request (400): ${errorMsg}`);
             } else if (response.status === 500) {
-                throw new Error("DOKU internal server error. This could be due to: 1) Invalid Client ID/Secret, 2) Account not activated, 3) API format changed. Check DOKU dashboard.");
+                // 500 error usually means wrong credentials or account not configured
+                throw new Error("DOKU internal server error (500). This usually means: 1) Wrong Secret Key, 2) Checkout API not enabled in DOKU Dashboard, 3) Using Production keys in Sandbox (or vice versa). Go to DOKU Dashboard → Credentials to verify.");
             }
 
             // Provide helpful error messages
             const errorMessage = errorDetails.message?.[0] || errorDetails.message || responseText;
-            throw new Error(`DOKU error: ${errorMessage}`);
+            throw new Error(`DOKU error (${response.status}): ${errorMessage}`);
         }
 
         const data = JSON.parse(responseText);

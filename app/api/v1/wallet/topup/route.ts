@@ -13,6 +13,8 @@ import {
 } from "@/lib/api-helpers";
 import { AppError } from "@/lib/errors";
 import { z } from "zod";
+import { randomBytes } from "crypto";
+import { eq } from "drizzle-orm";
 
 const topupSchema = z.object({
     amount: z.number().min(10000, "Minimum top-up adalah Rp 10.000").max(10000000, "Maximum top-up adalah Rp 10.000.000"),
@@ -40,10 +42,16 @@ export async function POST(request: NextRequest) {
         // Get active payment gateway
         const gateway = await getActiveGateway();
 
-        // Generate unique order ID
-        const orderId = `TOPUP-${Date.now()}-${session.user.id.slice(0, 8)}`;
+        // Generate invoice number: alphanumeric only, max 30 chars, no symbols
+        // Format: TOPUP + YYYYMMDD + random hex (12 chars)
+        // Example: TOPUP20260210FB03F3AE538B (24 chars total)
+        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
+        const randomHex = randomBytes(6).toString('hex').toUpperCase(); // 12 hex chars
+        const invoiceNumber = `TOPUP${dateStr}${randomHex}`; // TOPUP20260210FB03F3AE538B = 24 chars
 
-        // Create order in database first
+        console.log("📝 Generated invoice number:", invoiceNumber, `(length: ${invoiceNumber.length})`);
+
+        // Create order in database with externalId (our invoice number for webhook lookup)
         const [order] = await db
             .insert(topupOrders)
             .values({
@@ -52,6 +60,7 @@ export async function POST(request: NextRequest) {
                 status: "pending",
                 paymentMethod,
                 gatewayProvider: gateway.provider,
+                externalId: invoiceNumber, // Our invoice number - used for webhook lookup
             })
             .returning();
 
@@ -59,18 +68,18 @@ export async function POST(request: NextRequest) {
         const invoice = await gateway.createInvoice({
             amount,
             description: `Top-up Saldo Dropboard - Rp ${amount.toLocaleString("id-ID")}`,
-            externalId: order.id,
+            externalId: invoiceNumber, // Send our invoice number to Xendit
             customerEmail: session.user.email,
             customerName: session.user.name,
             paymentMethod,
             expiresInHours: 24,
         });
 
-        // Update order with gateway info
+        // Update order with gateway info (Xendit's invoice ID and payment URL)
         await db
             .update(topupOrders)
             .set({
-                gatewayInvoiceId: invoice.id,
+                gatewayInvoiceId: invoice.id, // Xendit's internal invoice ID
                 gatewayInvoiceUrl: invoice.invoiceUrl,
                 expiresAt: invoice.expiresAt,
                 updatedAt: new Date(),
@@ -81,6 +90,8 @@ export async function POST(request: NextRequest) {
         await logInfo("wallet", `Top-up order created: ${order.id}`, {
             orderId: order.id,
             amount,
+            externalId: invoiceNumber,
+            gatewayInvoiceId: invoice.id,
             gateway: gateway.provider,
         }, session.user.id);
 
@@ -104,6 +115,3 @@ export async function POST(request: NextRequest) {
         return serverErrorResponse("Gagal membuat order top-up. Silakan coba lagi.");
     }
 }
-
-// Need eq for update query
-import { eq } from "drizzle-orm";

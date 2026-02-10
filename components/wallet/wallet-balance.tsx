@@ -11,11 +11,15 @@ interface WalletBalance {
     formattedBalance: string;
 }
 
-export function WalletBalanceCard() {
+interface WalletBalanceCardProps {
+    refreshKey?: number;
+}
+
+export function WalletBalanceCard({ refreshKey }: WalletBalanceCardProps) {
     const [isTopUpOpen, setIsTopUpOpen] = useState(false);
 
     const { data, isLoading } = useQuery<WalletBalance>({
-        queryKey: ["wallet-balance"],
+        queryKey: ["wallet-balance", refreshKey],
         queryFn: async () => {
             const res = await fetch("/api/v1/wallet/balance");
             if (!res.ok) throw new Error("Failed to fetch balance");

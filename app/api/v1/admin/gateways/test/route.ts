@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/middleware/admin-guard";
-import { db } from "@/db";
-import { paymentGatewayConfig } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import crypto from "crypto";
+import { randomBytes, createHash, createHmac } from "crypto";
 
 /**
  * Test DOKU gateway connection and credentials
@@ -47,14 +44,19 @@ async function testDOKUConnection(clientId: string, secretKey: string, isProduct
     const baseUrl = isProduction ? "https://api.doku.com" : "https://api-sandbox.doku.com";
     const targetPath = "/checkout/v1/payment";
 
-    // Create a minimal test request
+    // Create a minimal test request with proper invoice format
     const timestamp = new Date().toISOString();
-    const requestId = crypto.randomUUID();
+    const requestId = randomBytes(16).toString('hex');
+
+    // Generate invoice number: alphanumeric only, max 30 chars, no symbols
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
+    const randomHex = randomBytes(6).toString('hex').toUpperCase(); // 12 hex chars
+    const invoiceNumber = `TEST${dateStr}${randomHex}`; // TEST20260210FB03F3AE538B = 23 chars
 
     const testBody = JSON.stringify({
         order: {
             amount: 10000,
-            invoice_number: `TEST-${Date.now()}`,
+            invoice_number: invoiceNumber,
             callback_url: "https://example.com/callback",
             auto_redirect: true,
         },
@@ -68,9 +70,9 @@ async function testDOKUConnection(clientId: string, secretKey: string, isProduct
     });
 
     // Generate signature
-    const digest = crypto.createHash("sha256").update(testBody).digest("base64");
+    const digest = createHash("sha256").update(testBody).digest("base64");
     const signatureData = `Client-Id:${clientId}\nRequest-Id:${requestId}\nRequest-Timestamp:${timestamp}\nRequest-Target:${targetPath}\nDigest:${digest}`;
-    const signature = crypto.createHmac("sha256", secretKey).update(signatureData).digest("base64");
+    const signature = createHmac("sha256", secretKey).update(signatureData).digest("base64");
 
     console.log("🧪 Testing DOKU Connection:", {
         baseUrl,

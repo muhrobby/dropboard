@@ -1,0 +1,9 @@
+{
+	"servers": {
+		"API Reference": {
+			"url": "https://developers.doku.com/~gitbook/mcp",
+			"type": "http"
+		}
+	},
+	"inputs": []
+}

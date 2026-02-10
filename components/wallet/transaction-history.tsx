@@ -36,12 +36,16 @@ interface TransactionsResponse {
     };
 }
 
-export function TransactionHistory() {
+interface TransactionHistoryProps {
+    refreshKey?: number;
+}
+
+export function TransactionHistory({ refreshKey }: TransactionHistoryProps) {
     const [page, setPage] = useState(1);
     const limit = 10;
 
     const { data, isLoading } = useQuery<TransactionsResponse>({
-        queryKey: ["wallet-history", page],
+        queryKey: ["wallet-history", page, refreshKey],
         queryFn: async () => {
             const res = await fetch(`/api/v1/wallet/history?page=${page}&limit=${limit}`);
             if (!res.ok) throw new Error("Failed to fetch history");

@@ -6,8 +6,43 @@ import { TransactionHistory } from "@/components/wallet/transaction-history";
 import { SubscriptionCard } from "@/components/wallet/subscription-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreditCard, Wallet, History } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function BillingPage() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const [key, setKey] = useState(0); // Force refresh components
+
+    useEffect(() => {
+        const paymentStatus = searchParams.get("payment");
+
+        if (paymentStatus === "success") {
+            toast.success("Pembayaran berhasil! Saldo Anda telah ditambahkan.", {
+                duration: 5000,
+                action: {
+                    label: "Tutup",
+                    onClick: () => {},
+                },
+            });
+            // Force refresh wallet balance
+            setKey(prev => prev + 1);
+        } else if (paymentStatus === "failed") {
+            toast.error("Pembayaran gagal. Silakan coba lagi atau hubungi support.", {
+                duration: 5000,
+                action: {
+                    label: "Tutup",
+                    onClick: () => {},
+                },
+            });
+        }
+
+        // Clear URL params after showing message
+        if (paymentStatus) {
+            router.replace("/dashboard/settings/billing", { scroll: false });
+        }
+    }, [searchParams, router]);
     return (
         <div className="p-6 lg:p-8 space-y-6">
             <PageHeader
@@ -17,7 +52,7 @@ export default function BillingPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2">
-                    <WalletBalanceCard />
+                    <WalletBalanceCard refreshKey={key} />
                 </div>
                 <div className="md:col-span-1">
                     <SubscriptionCard />
@@ -40,7 +75,7 @@ export default function BillingPage() {
                     </div>
 
                     <TabsContent value="history" className="space-y-4">
-                        <TransactionHistory />
+                        <TransactionHistory refreshKey={key} />
                     </TabsContent>
 
                     <TabsContent value="invoices">

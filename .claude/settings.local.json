@@ -1,11 +1,19 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(pnpm build:*)",
+      "Bash(pnpm test:*)",
+      "Bash(npx tsx:*)",
+      "mcp__doku-mcp-server__create_doku_direct_checkout_card_only",
+      "Bash(curl:*)",
+      "Bash(npx drizzle-kit generate:*)",
+      "Bash(npx drizzle-kit migrate:*)",
+      "Bash(psql:*)",
+      "Bash(node:*)"
+    ]
+  },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "shadcn"
-  ],
-  "permissions": {
-    "allow": [
-      "Bash(pnpm build:*)"
-    ]
-  }
+  ]
 }
