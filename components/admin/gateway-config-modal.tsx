@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, Plug } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -27,19 +27,24 @@ export function GatewayConfigModal({ gateway, open, onOpenChange }: GatewayConfi
     const queryClient = useQueryClient();
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
+    const [isTesting, setIsTesting] = useState(false);
+    const [hasExistingConfig, setHasExistingConfig] = useState(false);
 
     useEffect(() => {
         if (gateway && open) {
             // Initialize form data from gateway config
-            // Use empty strings if config is null
             const initialData = gateway.config || {};
 
-            // Set defaults based on provider if empty
+            // Check if there's existing configuration
+            const hasConfig = Object.keys(initialData).length > 0;
+            setHasExistingConfig(hasConfig);
+
+            // Set defaults based on provider
             if (gateway.provider === "doku") {
                 setFormData({
                     clientId: initialData.clientId || "",
                     secretKey: initialData.secretKey || "",
-                    isProduction: initialData.isProduction === true, // Ensure boolean
+                    isProduction: initialData.isProduction === true,
                 });
             } else if (gateway.provider === "xendit") {
                 setFormData({
@@ -77,6 +82,55 @@ export function GatewayConfigModal({ gateway, open, onOpenChange }: GatewayConfi
         },
     });
 
+    const handleTestConnection = async () => {
+        if (!gateway) return;
+
+        // Validate required fields
+        if (gateway.provider === "doku") {
+            if (!formData.clientId || !formData.secretKey) {
+                toast.error("Please enter Client ID and Secret Key first");
+                return;
+            }
+        } else if (gateway.provider === "xendit") {
+            if (!formData.secretKey) {
+                toast.error("Please enter Secret Key first");
+                return;
+            }
+        }
+
+        setIsTesting(true);
+        try {
+            const res = await fetch("/api/v1/admin/gateways/test", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    provider: gateway.provider,
+                    ...formData,
+                }),
+            });
+
+            const result = await res.json();
+
+            if (result.success) {
+                toast.success("✅ Connection successful!", {
+                    description: result.data.message,
+                });
+                console.log("Test result:", result.data);
+            } else {
+                toast.error("❌ Connection failed", {
+                    description: result.error.message,
+                });
+                console.error("Test error:", result.error);
+            }
+        } catch (error) {
+            toast.error("Test failed", {
+                description: error instanceof Error ? error.message : "Unknown error",
+            });
+        } finally {
+            setIsTesting(false);
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         updateMutation.mutate(formData);
@@ -105,24 +159,44 @@ export function GatewayConfigModal({ gateway, open, onOpenChange }: GatewayConfi
                 <form onSubmit={handleSubmit} className="space-y-4 py-4">
                     {gateway.provider === "doku" && (
                         <>
+                            {hasExistingConfig && (
+                                <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 p-3 text-sm text-blue-800 dark:text-blue-200">
+                                    ℹ️ This gateway already has configuration. Values will be updated when you save.
+                                </div>
+                            )}
+
                             <div className="space-y-2">
-                                <Label htmlFor="clientId">Client ID</Label>
+                                <Label htmlFor="clientId">
+                                    Client ID
+                                    {formData.clientId && (
+                                        <span className="ml-2 text-xs text-muted-foreground">(Current: {formData.clientId.substring(0, 8)}...)</span>
+                                    )}
+                                </Label>
                                 <Input
                                     id="clientId"
                                     value={formData.clientId || ""}
                                     onChange={(e) => handleChange("clientId", e.target.value)}
-                                    placeholder="Enter DOKU Client ID"
+                                    placeholder={hasExistingConfig && !formData.clientId ? "Enter new Client ID to update" : "Enter DOKU Client ID (e.g., BRN-0242-xxxxx)"}
                                 />
+                                <p className="text-xs text-muted-foreground">
+                                    Found in DOKU Dashboard → Credentials → Checkout API
+                                </p>
                             </div>
+
                             <div className="space-y-2">
-                                <Label htmlFor="secretKey">Secret Key</Label>
+                                <Label htmlFor="secretKey">
+                                    Secret Key
+                                    {formData.secretKey && (
+                                        <span className="ml-2 text-xs text-muted-foreground">(Current: ••••••••••••)</span>
+                                    )}
+                                </Label>
                                 <div className="relative">
                                     <Input
                                         id="secretKey"
                                         type={showSecrets.secretKey ? "text" : "password"}
                                         value={formData.secretKey || ""}
                                         onChange={(e) => handleChange("secretKey", e.target.value)}
-                                        placeholder="Enter DOKU Secret Key"
+                                        placeholder={hasExistingConfig && !formData.secretKey ? "Enter new Secret Key to update" : "Enter DOKU Secret Key"}
                                     />
                                     <Button
                                         type="button"
@@ -138,6 +212,9 @@ export function GatewayConfigModal({ gateway, open, onOpenChange }: GatewayConfi
                                         )}
                                     </Button>
                                 </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Shared Key from DOKU Dashboard → Credentials → Checkout API
+                                </p>
                             </div>
                             <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                                 <div className="space-y-0.5">
@@ -156,15 +233,26 @@ export function GatewayConfigModal({ gateway, open, onOpenChange }: GatewayConfi
 
                     {gateway.provider === "xendit" && (
                         <>
+                            {hasExistingConfig && (
+                                <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 p-3 text-sm text-blue-800 dark:text-blue-200">
+                                    ℹ️ This gateway already has configuration. Values will be updated when you save.
+                                </div>
+                            )}
+
                             <div className="space-y-2">
-                                <Label htmlFor="secretKey">Secret Key</Label>
+                                <Label htmlFor="secretKey">
+                                    Secret Key
+                                    {formData.secretKey && (
+                                        <span className="ml-2 text-xs text-muted-foreground">(Current: ••••••••••••)</span>
+                                    )}
+                                </Label>
                                 <div className="relative">
                                     <Input
                                         id="secretKey"
                                         type={showSecrets.secretKey ? "text" : "password"}
                                         value={formData.secretKey || ""}
                                         onChange={(e) => handleChange("secretKey", e.target.value)}
-                                        placeholder="Enter Xendit Secret Key"
+                                        placeholder={hasExistingConfig && !formData.secretKey ? "Enter new Secret Key to update" : "Enter Xendit Secret Key"}
                                     />
                                     <Button
                                         type="button"
@@ -181,8 +269,14 @@ export function GatewayConfigModal({ gateway, open, onOpenChange }: GatewayConfi
                                     </Button>
                                 </div>
                             </div>
+
                             <div className="space-y-2">
-                                <Label htmlFor="publicKey">Public Key</Label>
+                                <Label htmlFor="publicKey">
+                                    Public Key
+                                    {formData.publicKey && (
+                                        <span className="ml-2 text-xs text-muted-foreground">(Current: {formData.publicKey.substring(0, 12)}...)</span>
+                                    )}
+                                </Label>
                                 <Input
                                     id="publicKey"
                                     value={formData.publicKey || ""}
@@ -190,8 +284,14 @@ export function GatewayConfigModal({ gateway, open, onOpenChange }: GatewayConfi
                                     placeholder="Enter Xendit Public Key"
                                 />
                             </div>
+
                             <div className="space-y-2">
-                                <Label htmlFor="callbackToken">Callback Token</Label>
+                                <Label htmlFor="callbackToken">
+                                    Callback Token
+                                    {formData.callbackToken && (
+                                        <span className="ml-2 text-xs text-muted-foreground">(Current: ••••••••••••)</span>
+                                    )}
+                                </Label>
                                 <div className="relative">
                                     <Input
                                         id="callbackToken"
@@ -224,14 +324,40 @@ export function GatewayConfigModal({ gateway, open, onOpenChange }: GatewayConfi
                         </div>
                     )}
 
-                    <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                            Cancel
+                    <DialogFooter className="gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleTestConnection}
+                            disabled={isTesting || updateMutation.isPending}
+                            className="flex-1"
+                        >
+                            {isTesting ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <Plug className="mr-2 h-4 w-4" />
+                            )}
+                            Test Connection
                         </Button>
-                        <Button type="submit" disabled={updateMutation.isPending}>
-                            {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Changes
-                        </Button>
+                        <div className="flex gap-2 flex-1">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => onOpenChange(false)}
+                                disabled={updateMutation.isPending}
+                                className="flex-1"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={updateMutation.isPending || isTesting}
+                                className="flex-1"
+                            >
+                                {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save
+                            </Button>
+                        </div>
                     </DialogFooter>
                 </form>
             </DialogContent>

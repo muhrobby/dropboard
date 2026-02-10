@@ -18,7 +18,7 @@ export default function AdminLayout({
 
     // Check if user is admin
     const { data: user, isLoading, error } = useQuery({
-        queryKey: ["current-user"],
+        queryKey: ["current-user-admin"], // Use unique key to avoid cache conflict with sidebar
         queryFn: async () => {
             const res = await fetch("/api/v1/me");
             if (!res.ok) {

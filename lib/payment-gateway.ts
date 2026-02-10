@@ -243,36 +243,35 @@ class DOKUGateway implements PaymentGateway {
         const requestId = crypto.randomUUID();
         const targetPath = "/checkout/v1/payment";
 
-        // DOKU checkout API requires line_items and payment_method_types
-        const body = JSON.stringify({
+        // DOKU Checkout API v1 - Correct request structure
+        // Reference: https://dashboard.doku.com/docs/docs/jokul-checkout/jokul-checkout-integration/
+        const requestBody = {
             order: {
-                invoice_number: params.externalId,
                 amount: params.amount,
+                invoice_number: params.externalId,
+                // Optional fields for full request
+                currency: "IDR",
                 callback_url: `${appUrl}/api/webhooks/doku/notification`,
-                line_items: [{
-                    name: params.description || "Top Up Wallet",
-                    quantity: 1,
-                    price: params.amount,
-                    sku: params.externalId.substring(0, 20), // SKU max 20 chars
-                }],
-                payment_method_types: [
-                    "VIRTUAL_ACCOUNT",
-                    "EWALLET",
-                    "QRIS",
-                ],
+                auto_redirect: true,
+            },
+            payment: {
+                payment_due_date: (params.expiresInHours || 24) * 60, // Convert hours to minutes
             },
             customer: {
+                name: (params.customerName || params.customerEmail.split("@")[0]).substring(0, 255),
                 email: params.customerEmail,
-                name: params.customerName || params.customerEmail.split("@")[0],
             },
-        });
+        };
 
+        const body = JSON.stringify(requestBody);
         const signature = this.generateSignature(body, timestamp, targetPath, requestId);
 
         console.log("📤 DOKU Request:", {
             url: `${this.baseUrl}${targetPath}`,
             clientId: this.clientId,
             environment: this.baseUrl.includes("sandbox") ? "SANDBOX" : "PRODUCTION",
+            invoiceNumber: params.externalId,
+            amount: params.amount,
         });
 
         const response = await fetch(`${this.baseUrl}${targetPath}`, {
@@ -305,6 +304,17 @@ class DOKUGateway implements PaymentGateway {
                 "Request-Timestamp": timestamp,
                 "Request-Target": targetPath,
             });
+
+            // Check for common issues
+            if (response.status === 401) {
+                throw new Error("DOKU authentication failed. Check your Client ID and Secret Key in admin panel.");
+            } else if (response.status === 400) {
+                const errorMessages = errorDetails.error_messages || errorDetails.message;
+                const errorMsg = Array.isArray(errorMessages) ? errorMessages.join(", ") : JSON.stringify(errorMessages);
+                throw new Error(`DOKU bad request: ${errorMsg}`);
+            } else if (response.status === 500) {
+                throw new Error("DOKU internal server error. This could be due to: 1) Invalid Client ID/Secret, 2) Account not activated, 3) API format changed. Check DOKU dashboard.");
+            }
 
             // Provide helpful error messages
             const errorMessage = errorDetails.message?.[0] || errorDetails.message || responseText;
