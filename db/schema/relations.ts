@@ -11,6 +11,7 @@ import { wallets, walletTransactions } from "./wallets";
 import { subscriptions, paymentGatewayConfig } from "./subscriptions";
 import { topupOrders } from "./topup-orders";
 import { pricingTiers } from "./pricing-tiers";
+import { todoColumns, todoTasks } from "./todos";
 
 export const usersRelations = relations(users, ({ many, one }) => ({
   sessions: many(sessions),
@@ -24,6 +25,8 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   wallet: one(wallets),
   subscription: one(subscriptions),
   topupOrders: many(topupOrders),
+  createdTasks: many(todoTasks, { relationName: "taskCreator" }),
+  assignedTasks: many(todoTasks, { relationName: "taskAssignee" }),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -51,6 +54,8 @@ export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
   invites: many(invites),
   activityLogs: many(activityLogs),
   webhooks: many(webhooks),
+  todoColumns: many(todoColumns),
+  todoTasks: many(todoTasks),
 }));
 
 export const workspaceMembersRelations = relations(
@@ -175,5 +180,35 @@ export const topupOrdersRelations = relations(topupOrders, ({ one }) => ({
   user: one(users, {
     fields: [topupOrders.userId],
     references: [users.id],
+  }),
+}));
+
+// Todo relations
+export const todoColumnsRelations = relations(todoColumns, ({ one, many }) => ({
+  workspace: one(workspaces, {
+    fields: [todoColumns.workspaceId],
+    references: [workspaces.id],
+  }),
+  tasks: many(todoTasks),
+}));
+
+export const todoTasksRelations = relations(todoTasks, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [todoTasks.workspaceId],
+    references: [workspaces.id],
+  }),
+  column: one(todoColumns, {
+    fields: [todoTasks.columnId],
+    references: [todoColumns.id],
+  }),
+  creator: one(users, {
+    fields: [todoTasks.createdBy],
+    references: [users.id],
+    relationName: "taskCreator",
+  }),
+  assignee: one(users, {
+    fields: [todoTasks.assignedTo],
+    references: [users.id],
+    relationName: "taskAssignee",
   }),
 }));

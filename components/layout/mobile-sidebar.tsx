@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  LayoutDashboard,
   ImageDown,
   Bookmark,
   Search,
@@ -14,6 +15,7 @@ import {
   UserCircle,
   Shield,
   CreditCard,
+  ListTodo,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
@@ -30,7 +32,9 @@ interface CurrentUser {
 }
 
 const navItems = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/drops", label: "Drops", icon: ImageDown },
+  { href: "/dashboard/todo", label: "Todo", icon: ListTodo },
   { href: "/dashboard/pinboard", label: "Pinboard", icon: Bookmark },
   { href: "/dashboard/search", label: "Search", icon: Search },
   { href: "/dashboard/team", label: "Team", icon: Users },

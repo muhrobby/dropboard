@@ -14,6 +14,7 @@ import {
   UserCircle,
   Shield,
   CreditCard,
+  ListTodo,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WorkspaceSwitcher } from "./workspace-switcher";
@@ -30,6 +31,7 @@ interface CurrentUser {
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/drops", label: "Drops", icon: ImageDown },
+  { href: "/dashboard/todo", label: "Todo", icon: ListTodo },
   { href: "/dashboard/pinboard", label: "Pinboard", icon: Bookmark },
   { href: "/dashboard/search", label: "Search", icon: Search },
   { href: "/dashboard/team", label: "Team", icon: Users },
@@ -111,7 +113,7 @@ export function AppSidebar() {
             <p className="px-3 mb-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
               Workspace
             </p>
-            {navItems.slice(1, 7).map((item) => {
+            {navItems.slice(1, 8).map((item) => {
               const isActive =
                 pathname === item.href || pathname.startsWith(item.href + "/");
               return (
@@ -141,7 +143,7 @@ export function AppSidebar() {
             <p className="px-3 mb-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
               Configuration
             </p>
-            {navItems.slice(7).map((item) => {
+            {navItems.slice(8).map((item) => {
               const isExactSettings = item.href === "/dashboard/settings" && pathname === "/dashboard/settings";
               const isBilling = item.href === "/dashboard/settings/billing" && pathname.startsWith("/dashboard/settings/billing");
               const isProfile = item.href === "/dashboard/profile" && pathname.startsWith("/dashboard/profile");

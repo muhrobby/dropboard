@@ -213,7 +213,7 @@ export async function getItem(id: string) {
     })
     .from(items)
     .leftJoin(fileAssets, eq(items.fileAssetId, fileAssets.id))
-    .where(eq(items.id, id))
+    .where(and(eq(items.id, id), isNull(items.deletedAt)))
     .limit(1);
 
   if (result.length === 0) {
