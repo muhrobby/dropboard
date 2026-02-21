@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -226,7 +227,7 @@ function TierModal({ isOpen, onClose, tier, onSave, isPending }: any) {
                 </DialogHeader>
                 <div className="grid grid-cols-2 gap-4 py-4">
                     <div className="space-y-2">
-                        <Label>Internal Name (e.g. 'pro')</Label>
+                        <Label>Internal Name (e.g. &apos;pro&apos;)</Label>
                         <Input name="name" value={formData.name || ""} onChange={handleChange} disabled={!!tier} />
                     </div>
                     <div className="space-y-2">

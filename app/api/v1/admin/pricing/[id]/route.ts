@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 import { requireAdmin, ForbiddenError } from "@/middleware/admin-guard";
 import { db } from "@/db";

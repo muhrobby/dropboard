@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from "vitest";
 import { requirePermission, hasPermission } from "@/middleware/rbac";
 import { PERMISSIONS } from "@/lib/constants";

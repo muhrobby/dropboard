@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * URL Validator for SSRF (Server-Side Request Forgery) Protection
  *

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { vi, describe, it, expect, beforeEach } from "vitest";
 
 // Mock the dependencies
@@ -49,7 +50,7 @@ describe("Cleanup Service (Two-Phase Commit)", () => {
 
     // Setup the mock to return one item
     const mockWhere = vi.fn().mockResolvedValue(mockExpiredItems);
-    // @ts-ignore
+    // @ts-expect-error mock data type is incomplete
     db.select = vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
         leftJoin: vi.fn().mockReturnValue({
@@ -88,7 +89,7 @@ describe("Cleanup Service (Two-Phase Commit)", () => {
     ];
 
     const mockWhere = vi.fn().mockResolvedValue(mockExpiredItems);
-    // @ts-ignore
+    // @ts-expect-error mock data type is incomplete
     db.select = vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
         leftJoin: vi.fn().mockReturnValue({

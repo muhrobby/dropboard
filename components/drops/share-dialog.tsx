@@ -163,7 +163,7 @@ export function ShareDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5" />
-            Share "{itemTitle}"
+            Share &quot;{itemTitle}&quot;
           </DialogTitle>
         </DialogHeader>
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { type NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/middleware/auth-guard";
 import { requireWorkspaceMembership } from "@/middleware/workspace-guard";

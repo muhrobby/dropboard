@@ -110,7 +110,7 @@ export function UploadDropzone({
       // Notify parent
       onFilesSelected([...files, ...fileWithPreview].map(f => f.file));
     },
-    [files, maxFiles, generatePreview, onFilesSelected]
+    [files, maxFiles, generatePreview, onFilesSelected, maxSizeBytes]
   );
 
   const removeFile = useCallback((id: string) => {
