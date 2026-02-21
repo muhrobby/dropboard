@@ -39,25 +39,32 @@ export default function DashboardLayout({
   // Show loading skeleton while session is being fetched
   if (isSessionPending || isWorkspacesLoading) {
     return (
-      <div className="flex h-dvh">
+      <div className="flex h-[100dvh] w-full overflow-hidden bg-zinc-50 dark:bg-zinc-950">
         {/* Sidebar skeleton - desktop */}
-        <div className="hidden md:flex md:w-64 md:flex-col md:border-r p-4 space-y-4">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-10 w-full" />
-          <div className="space-y-2 mt-4">
+        <div className="hidden md:flex md:w-72 md:flex-col md:border-r md:border-zinc-200 dark:md:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-4">
+          <Skeleton className="h-8 w-32 rounded-lg" />
+          <Skeleton className="h-12 w-full rounded-xl" />
+          <div className="space-y-3 mt-6">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-8 w-full" />
+              <Skeleton key={i} className="h-10 w-full rounded-lg" />
             ))}
           </div>
         </div>
         {/* Main content skeleton */}
-        <div className="flex flex-1 flex-col">
-          <div className="h-14 border-b flex items-center px-4">
-            <Skeleton className="h-8 w-24" />
+        <div className="flex flex-1 flex-col relative">
+          <div className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md flex items-center px-6">
+            <Skeleton className="h-8 w-24 rounded-lg" />
           </div>
-          <div className="flex-1 p-6 space-y-4">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-32 w-full" />
+          <div className="flex-1 p-6 md:p-8 space-y-8 max-w-7xl mx-auto w-full">
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-64 rounded-xl" />
+              <Skeleton className="h-5 w-96 rounded-lg" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-32 w-full rounded-2xl" />
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -69,7 +76,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-dvh overflow-hidden">
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-zinc-50 dark:bg-zinc-950 text-foreground selection:bg-primary/20">
       {/* Desktop sidebar */}
       <AppSidebar />
 
@@ -77,11 +84,13 @@ export default function DashboardLayout({
       <MobileSidebar />
 
       {/* Main content area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden relative">
         <Topbar />
 
-        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
-          {children}
+        <main className="flex-1 overflow-y-auto pb-20 md:pb-0 scroll-smooth">
+          <div className="mx-auto w-full max-w-7xl relative">
+            {children}
+          </div>
         </main>
 
         {/* Mobile bottom nav */}

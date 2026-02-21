@@ -21,6 +21,7 @@
     "@radix-ui/react-switch": "^1.2.6",
     "@tanstack/react-query": "^5.90.20",
     "@tanstack/react-table": "^8.21.3",
+    "bcrypt": "^6.0.0",
     "better-auth": "^1.4.18",
     "clamscan": "^2.4.0",
     "class-variance-authority": "^0.7.1",
@@ -28,6 +29,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.45.1",
+    "ioredis": "^5.9.3",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "next-themes": "^0.4.6",
@@ -47,6 +49,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
     "@types/nodemailer": "^7.0.9",
     "@types/react": "^19",

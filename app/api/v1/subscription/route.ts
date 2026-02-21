@@ -45,7 +45,8 @@ export async function GET() {
                     storageUsed,
                     storageLimit: limits.storageLimitBytes,
                     storagePercent: Math.min(100, Math.round((storageUsed / limits.storageLimitBytes) * 100)),
-                }
+                },
+                tierLimits: limits
             }
         });
 

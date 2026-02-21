@@ -82,7 +82,8 @@ async function sendWithSMTP({
   const transporter = nodemailer.default.createTransport({
     host,
     port,
-    secure: port === 465,
+    secure: port === 465 && process.env.SMTP_IGNORE_TLS !== "true",
+    ignoreTLS: process.env.SMTP_IGNORE_TLS === "true",
     auth: {
       user,
       pass,

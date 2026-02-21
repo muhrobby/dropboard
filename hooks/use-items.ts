@@ -57,6 +57,9 @@ async function createLink(data: {
   title?: string;
   note?: string;
   tags?: string[];
+  retentionDays?: number;
+  maxDownloads?: number;
+  password?: string;
 }): Promise<ItemResponse> {
   const res = await fetch("/api/v1/items", {
     method: "POST",
@@ -74,12 +77,19 @@ async function createNote(data: {
   workspaceId: string;
   title: string;
   content: string;
+  password?: string;
   tags?: string[];
+  retentionDays?: number;
+  maxDownloads?: number;
 }): Promise<ItemResponse> {
+  const payload = {
+    ...data,
+    type: "note",
+  };
   const res = await fetch("/api/v1/items", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...data, type: "note" }),
+    body: JSON.stringify(payload),
   });
   const json: ApiResponse<ItemResponse> = await res.json();
   if (!json.success) {
@@ -158,7 +168,45 @@ export function useCreateLink() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createLink,
-    onSuccess: () => {
+    onMutate: async (newLink) => {
+      // Optimistic update
+      await queryClient.cancelQueries({ queryKey: ["items"] });
+      const previousQueries = queryClient.getQueriesData({ queryKey: ["items"] });
+      
+      // Update all matching query caches
+      queryClient.setQueriesData({ queryKey: ["items"] }, (old: any) => {
+        if (!old) return old;
+        
+        const optimisticItem = {
+          id: `temp-${Date.now()}`,
+          workspaceId: newLink.workspaceId,
+          type: "link",
+          title: newLink.title || "Loading link...",
+          content: newLink.content,
+          note: newLink.note || null,
+          tags: newLink.tags || [],
+          isPinned: true,
+          expiresAt: null,
+          createdAt: new Date().toISOString(),
+          isOptimistic: true, // Marker for UI
+        };
+
+        if (old.data && Array.isArray(old.data)) {
+          return { ...old, data: [optimisticItem, ...old.data] };
+        }
+        return old;
+      });
+
+      return { previousQueries };
+    },
+    onError: (err, newLink, context) => {
+      if (context?.previousQueries) {
+        context.previousQueries.forEach(([queryKey, oldData]) => {
+          queryClient.setQueryData(queryKey, oldData);
+        });
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["items"] });
     },
   });
@@ -168,7 +216,42 @@ export function useCreateNote() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createNote,
-    onSuccess: () => {
+    onMutate: async (newNote) => {
+      await queryClient.cancelQueries({ queryKey: ["items"] });
+      const previousQueries = queryClient.getQueriesData({ queryKey: ["items"] });
+
+      queryClient.setQueriesData({ queryKey: ["items"] }, (old: any) => {
+        if (!old) return old;
+
+        const optimisticItem = {
+          id: `temp-${Date.now()}`,
+          workspaceId: newNote.workspaceId,
+          type: "note",
+          title: newNote.title,
+          content: newNote.content,
+          tags: newNote.tags || [],
+          isPinned: true,
+          expiresAt: null,
+          createdAt: new Date().toISOString(),
+          isOptimistic: true,
+        };
+
+        if (old.data && Array.isArray(old.data)) {
+          return { ...old, data: [optimisticItem, ...old.data] };
+        }
+        return old;
+      });
+
+      return { previousQueries };
+    },
+    onError: (err, newNote, context) => {
+      if (context?.previousQueries) {
+        context.previousQueries.forEach(([queryKey, oldData]) => {
+          queryClient.setQueryData(queryKey, oldData);
+        });
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["items"] });
     },
   });

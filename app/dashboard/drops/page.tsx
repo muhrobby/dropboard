@@ -139,24 +139,25 @@ function StatCard({
 }) {
   const Icon = icon;
   return (
-    <Card className="p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-center gap-4">
+    <Card className="relative overflow-hidden group border-zinc-200/60 dark:border-zinc-800/60 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 hover:border-primary/30">
+      <div className="flex items-start gap-4 relative z-10">
         <div
           className={cn(
-            "flex items-center justify-center w-12 h-12 rounded-xl",
+            "flex items-center justify-center size-12 rounded-2xl transition-transform duration-300 group-hover:scale-110 shadow-sm",
             bgColor,
           )}
         >
-          <Icon className={cn("w-6 h-6", color)} />
+          <Icon className={cn("size-6", color)} />
         </div>
-        <div className="flex-1">
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-2xl font-bold">{value}</p>
+        <div className="flex-1 space-y-1">
+          <p className="text-[13px] font-medium text-muted-foreground">{label}</p>
+          <p className="text-3xl font-bold tracking-tight text-foreground tabular-nums leading-none">{value}</p>
           {subtext && (
-            <p className="text-xs text-muted-foreground mt-0.5">{subtext}</p>
+            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1">{subtext}</p>
           )}
         </div>
       </div>
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent to-primary/[0.02] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
     </Card>
   );
 }
@@ -406,86 +407,89 @@ export default function DropsPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="border-b bg-background">
-        <div className="p-4 md:p-6 space-y-4">
+      <div className="border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-xl sticky top-0 z-20">
+        <div className="p-4 md:p-6 lg:px-8 space-y-5 max-w-7xl mx-auto">
           <PageHeader
             title="Drops"
-            description="Upload and manage your files"
+            description="Securely upload, organize, and manage your workspace files."
           >
-            <Button onClick={() => setUploadModalOpen(true)}>
-              <Upload className="h-4 w-4 mr-2" />
-              Upload
+            <Button onClick={() => setUploadModalOpen(true)} className="rounded-xl shadow-sm hover:shadow-md transition-all group">
+              <Upload className="size-4 mr-2 transition-transform group-hover:-translate-y-0.5" />
+              Upload Files
             </Button>
           </PageHeader>
 
-          {/* Breadcrumbs */}
-          <nav className="flex items-center gap-1 text-sm">
-            {breadcrumbs.map((crumb, index) => (
-              <div key={index} className="flex items-center">
-                {index > 0 && (
-                  <ChevronRight className="w-4 h-4 text-muted-foreground mx-1" />
-                )}
-                <button
-                  onClick={() => handleBreadcrumbClick(index)}
-                  className={cn(
-                    "hover:text-foreground transition-colors",
-                    index === breadcrumbs.length - 1
-                      ? "text-foreground font-medium"
-                      : "text-muted-foreground",
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end justify-between">
+            {/* Breadcrumbs */}
+            <nav className="flex items-center gap-1.5 text-sm overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
+              {breadcrumbs.map((crumb, index) => (
+                <div key={index} className="flex items-center shrink-0">
+                  {index > 0 && (
+                    <ChevronRight className="size-4 text-muted-foreground/50 mx-1" />
                   )}
-                >
-                  {crumb.name}
-                </button>
-              </div>
-            ))}
-          </nav>
+                  <button
+                    onClick={() => handleBreadcrumbClick(index)}
+                    className={cn(
+                      "transition-all duration-200 px-2 py-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800",
+                      index === breadcrumbs.length - 1
+                        ? "text-foreground font-semibold bg-zinc-100/50 dark:bg-zinc-800/50"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {crumb.name}
+                  </button>
+                </div>
+              ))}
+            </nav>
 
-          {/* Search and filters */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search in Drive..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+            {/* Search and filters */}
+            <div className="flex flex-col sm:flex-row gap-3 items-center shrink-0 w-full sm:w-auto">
+              <div className="relative w-full sm:w-64 group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <Input
+                  placeholder="Search files..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-10 rounded-xl bg-zinc-50 dark:bg-zinc-900 border-zinc-200/50 dark:border-zinc-800/50 focus-visible:ring-primary/20 transition-all w-full"
+                />
+              </div>
+              <Tabs
+                value={filterTab}
+                onValueChange={(v) => setFilterTab(v as FilterTab)}
+                className="w-full sm:w-auto"
+              >
+                <TabsList className="h-10 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-xl w-full grid grid-cols-3 sm:flex">
+                  <TabsTrigger value="all" className="rounded-lg text-xs font-medium transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm">All</TabsTrigger>
+                  <TabsTrigger value="images" className="rounded-lg text-xs font-medium transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm">Images</TabsTrigger>
+                  <TabsTrigger value="files" className="rounded-lg text-xs font-medium transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm">Files</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
-            <Tabs
-              value={filterTab}
-              onValueChange={(v) => setFilterTab(v as FilterTab)}
-            >
-              <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="images">Images</TabsTrigger>
-                <TabsTrigger value="files">Files</TabsTrigger>
-              </TabsList>
-            </Tabs>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="p-4 md:p-6 space-y-6">
+      <div className="flex-1 overflow-auto bg-zinc-50/50 dark:bg-zinc-950/50 scroll-smooth">
+        <div className="p-4 md:p-6 lg:p-8 space-y-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
           {/* Statistics Cards */}
           {!isLoading && allItems.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
               <StatCard
                 icon={Files}
                 label="Total Files"
                 value={stats.totalFiles}
                 subtext={`${stats.totalImages} images`}
-                color="text-blue-500"
-                bgColor="bg-blue-500/10"
+                color="text-indigo-600 dark:text-indigo-400"
+                bgColor="bg-indigo-500/10"
               />
               <StatCard
                 icon={Folder}
                 label="Folders"
                 value={stats.folderCount}
                 subtext={currentFolder ? "1 open" : "All visible"}
-                color="text-purple-500"
-                bgColor="bg-purple-500/10"
+                color="text-violet-600 dark:text-violet-400"
+                bgColor="bg-violet-500/10"
               />
               <StatCard
                 icon={Clock}
@@ -496,104 +500,109 @@ export default function DropsPage() {
                     ? `${stats.expiringToday} today`
                     : "Next 3 days"
                 }
-                color="text-orange-500"
-                bgColor="bg-orange-500/10"
+                color="text-amber-600 dark:text-amber-400"
+                bgColor="bg-amber-500/10"
               />
               <StatCard
                 icon={AlertTriangle}
                 label="Storage Used"
                 value={formatBytes(stats.totalSize)}
                 subtext={`${stats.pinnedCount} pinned`}
-                color="text-green-500"
-                bgColor="bg-green-500/10"
+                color="text-emerald-600 dark:text-emerald-400"
+                bgColor="bg-emerald-500/10"
               />
             </div>
           )}
 
           {/* Expiring Alert */}
           {!isLoading && stats.expiringToday > 0 && (
-            <div className="relative overflow-hidden rounded-xl border border-orange-500/50 bg-orange-500/5 p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-orange-500/20">
-                  <AlertTriangle className="w-5 h-5 text-orange-500" />
+            <div className="relative overflow-hidden rounded-2xl border border-rose-500/30 dark:border-rose-500/20 bg-rose-50/50 dark:bg-rose-500/5 p-5 shadow-sm animate-in slide-in-from-top-4 duration-500">
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="flex items-center justify-center size-12 shrink-0 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                  <AlertTriangle className="size-6 animate-pulse" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-orange-600 dark:text-orange-400">
+                <div className="flex-1 space-y-1">
+                  <p className="text-base font-semibold text-rose-700 dark:text-rose-400 tracking-tight">
                     {stats.expiringToday} file
-                    {stats.expiringToday > 1 ? "s" : ""} expiring today!
+                    {stats.expiringToday > 1 ? "s are" : " is"} expiring today!
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    These files will be automatically deleted. Pin them to keep
-                    permanently.
+                  <p className="text-sm text-rose-600/80 dark:text-rose-400/80 leading-relaxed">
+                    These unpinned files will be permanently deleted. Pin them or download to keep them.
                   </p>
                 </div>
               </div>
+              <div className="absolute top-0 right-0 p-32 bg-rose-500/5 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           )}
 
           {/* Toolbar */}
           {driveItems.length > 0 && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-2">
+              <div className="flex items-center gap-3 bg-white dark:bg-zinc-900 rounded-xl px-4 py-2 border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm">
                 {selectionMode && (
-                  <Button size="sm" variant="ghost" onClick={selectAll}>
+                  <Button size="sm" variant="ghost" onClick={selectAll} className="h-7 text-xs font-semibold rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
                     Select All ({currentFiles.length})
                   </Button>
                 )}
-                <p className="text-sm text-muted-foreground">
-                  {selectedIds.size > 0
-                    ? `${selectedIds.size} selected`
-                    : `${driveItems.length} item${driveItems.length !== 1 ? "s" : ""}`}
-                </p>
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  {selectedIds.size > 0 ? (
+                    <span className="text-primary">{selectedIds.size} selected</span>
+                  ) : (
+                    <span className="text-muted-foreground">{driveItems.length} item{driveItems.length !== 1 ? "s" : ""}</span>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center border rounded-lg">
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center border border-zinc-200/50 dark:border-zinc-800/50 bg-white dark:bg-zinc-900 rounded-xl p-1 shadow-sm">
                   <button
                     onClick={() => setViewMode("grid")}
                     className={cn(
-                      "p-2 transition-colors",
+                      "p-2 rounded-lg transition-all duration-200",
                       viewMode === "grid"
-                        ? "bg-accent text-accent-foreground"
-                        : "hover:bg-accent/50",
+                        ? "bg-zinc-100 dark:bg-zinc-800 text-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-foreground",
                     )}
                   >
-                    <Grid3x3 className="w-4 h-4" />
+                    <Grid3x3 className="size-4" />
                   </button>
                   <button
                     onClick={() => setViewMode("list")}
                     className={cn(
-                      "p-2 transition-colors",
+                      "p-2 rounded-lg transition-all duration-200",
                       viewMode === "list"
-                        ? "bg-accent text-accent-foreground"
-                        : "hover:bg-accent/50",
+                        ? "bg-zinc-100 dark:bg-zinc-800 text-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-foreground",
                     )}
                   >
-                    <List className="w-4 h-4" />
+                    <List className="size-4" />
                   </button>
                 </div>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortBy)}
-                  className="text-sm border rounded-lg px-2 py-2 bg-background"
-                >
-                  <option value="date">Date</option>
-                  <option value="name">Name</option>
-                  <option value="size">Size</option>
-                </select>
+                <div className="relative flex items-center border border-zinc-200/50 dark:border-zinc-800/50 bg-white dark:bg-zinc-900 rounded-xl shadow-sm overflow-hidden group hover:border-primary/30 transition-colors">
+                  <SortAsc className="absolute left-3 size-4 text-muted-foreground group-hover:text-primary transition-colors pointer-events-none" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortBy)}
+                    className="text-sm font-medium border-0 px-3 py-2.5 pl-9 bg-transparent focus:ring-0 outline-none appearance-none cursor-pointer w-28 text-foreground"
+                  >
+                    <option value="date" className="bg-background">Newest</option>
+                    <option value="name" className="bg-background">Name</option>
+                    <option value="size" className="bg-background">Size</option>
+                  </select>
+                </div>
                 <Button
-                  variant={selectionMode ? "secondary" : "outline"}
-                  size="sm"
+                  variant={selectionMode ? "default" : "outline"}
+                  className={cn(
+                    "rounded-xl shadow-sm transition-all duration-300",
+                    selectionMode ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-white dark:bg-zinc-900 border-zinc-200/50 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                  )}
                   onClick={() => {
-                    if (selectionMode) {
-                      clearSelection();
-                    } else {
-                      setSelectionMode(true);
-                    }
+                    if (selectionMode) clearSelection();
+                    else setSelectionMode(true);
                   }}
                 >
-                  <CheckSquare className="w-4 h-4" />
-                  <span className="hidden sm:inline ml-1">
-                    {selectionMode ? "Cancel" : "Select"}
+                  <CheckSquare className={cn("size-4 transition-transform", selectionMode && "scale-110")} />
+                  <span className="ml-2 font-semibold">
+                    {selectionMode ? "Done" : "Select"}
                   </span>
                 </Button>
               </div>
@@ -602,20 +611,31 @@ export default function DropsPage() {
 
           {/* Loading state */}
           {isLoading && (
-            <div className="space-y-4">
+            <div className="space-y-4 animate-in fade-in duration-500">
               {viewMode === "grid" ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-                  {Array.from({ length: 12 }).map((_, i) => (
-                    <div key={i} className="space-y-2">
-                      <Skeleton className="aspect-square w-full rounded-lg" />
-                      <Skeleton className="h-4 w-3/4" />
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <div key={i} className="space-y-3">
+                      <Skeleton className="aspect-square w-full rounded-2xl" />
+                      <div className="space-y-1.5 px-1">
+                        <Skeleton className="h-4 w-3/4 rounded-md" />
+                        <Skeleton className="h-3 w-1/2 rounded-md" />
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {Array.from({ length: 8 }).map((_, i) => (
-                    <Skeleton key={i} className="h-14 w-full" />
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl p-2">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-4 p-4 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
+                      <Skeleton className="size-10 rounded-xl" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-1/3 rounded-md" />
+                        <Skeleton className="h-3 w-1/4 rounded-md sm:hidden" />
+                      </div>
+                      <Skeleton className="h-4 w-24 rounded-md hidden sm:block" />
+                      <Skeleton className="h-4 w-16 rounded-md hidden sm:block" />
+                    </div>
                   ))}
                 </div>
               )}
@@ -639,7 +659,7 @@ export default function DropsPage() {
 
           {/* Grid View */}
           {!isLoading && driveItems.length > 0 && viewMode === "grid" && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 animate-in fade-in duration-500">
               {driveItems.map((driveItem) => {
                 if (driveItem.type === "folder") {
                   const folder = driveItem.folder!;
@@ -647,18 +667,20 @@ export default function DropsPage() {
                     <button
                       key={driveItem.id}
                       onClick={() => handleFolderClick(folder.id, folder.name)}
-                      className="group text-left"
+                      className="group flex flex-col text-left outline-none rounded-2xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                     >
-                      <div className="aspect-square rounded-xl bg-muted/50 border-2 border-dashed border-muted-foreground/25 flex items-center justify-center hover:border-primary/50 hover:bg-primary/5 transition-all">
-                        <Folder className="w-16 h-16 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <div className="aspect-square w-full rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-center transition-all duration-300 group-hover:border-primary/50 group-hover:shadow-lg group-hover:-translate-y-1 group-active:scale-95 shadow-sm relative overflow-hidden">
+                        <Folder className="size-14 text-muted-foreground/50 transition-all duration-300 group-hover:scale-110 group-hover:text-primary relative z-10 drop-shadow-sm" />
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent to-primary/[0.02] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <p className="text-sm font-medium mt-2 truncate">
-                        {folder.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {folder.itemCount} item
-                        {folder.itemCount !== 1 ? "s" : ""}
-                      </p>
+                      <div className="mt-3 px-1">
+                        <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors tracking-tight">
+                          {folder.name}
+                        </p>
+                        <p className="text-[13px] text-muted-foreground mt-0.5">
+                          {folder.itemCount} item{folder.itemCount !== 1 ? "s" : ""}
+                        </p>
+                      </div>
                     </button>
                   );
                 }
@@ -670,10 +692,10 @@ export default function DropsPage() {
                     {selectionMode && (
                       <div
                         className={cn(
-                          "absolute top-2 right-2 z-10 cursor-pointer transition-opacity",
+                          "absolute top-3 right-3 z-10 cursor-pointer transition-all duration-200",
                           isSelected
-                            ? "opacity-100"
-                            : "opacity-0 group-hover:opacity-100",
+                            ? "opacity-100 scale-100"
+                            : "opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100",
                         )}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -682,24 +704,21 @@ export default function DropsPage() {
                       >
                         <div
                           className={cn(
-                            "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
+                            "size-6 rounded-lg border-2 flex items-center justify-center transition-all duration-200 shadow-sm backdrop-blur-sm",
                             isSelected
-                              ? "bg-primary border-primary text-primary-foreground"
-                              : "bg-background/80 border-muted-foreground/50 hover:border-primary",
+                              ? "bg-primary border-primary text-primary-foreground scale-110"
+                              : "bg-white/80 dark:bg-zinc-900/80 border-zinc-300 dark:border-zinc-700 hover:border-primary",
                           )}
                         >
-                          {isSelected && (
-                            <Square className="w-3 h-3 fill-current" />
-                          )}
+                          <CheckSquare className={cn("size-3.5 transition-opacity", isSelected ? "opacity-100" : "opacity-0")} />
                         </div>
                       </div>
                     )}
                     <div
                       className={cn(
-                        "transition-all",
-                        selectionMode &&
-                        isSelected &&
-                        "ring-2 ring-primary rounded-xl",
+                        "transition-all duration-300 rounded-2xl h-full",
+                        selectionMode && isSelected && "ring-2 ring-primary ring-offset-2 scale-[0.98]",
+                        selectionMode && !isSelected && "hover:scale-[0.99] opacity-80 hover:opacity-100"
                       )}
                       onClick={
                         selectionMode
@@ -717,17 +736,17 @@ export default function DropsPage() {
 
           {/* List View */}
           {!isLoading && driveItems.length > 0 && viewMode === "list" && (
-            <div className="border rounded-xl overflow-hidden">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-sm overflow-hidden animate-in fade-in duration-500">
               {/* Header */}
-              <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-muted/50 text-sm font-medium text-muted-foreground border-b">
-                <div className="col-span-6">Name</div>
-                <div className="col-span-3">Modified</div>
+              <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-zinc-50/50 dark:bg-zinc-950/50 text-[13px] font-semibold text-muted-foreground border-b border-zinc-200/50 dark:border-zinc-800/50 uppercase tracking-wider">
+                <div className="col-span-6 md:col-span-7">Name</div>
+                <div className="col-span-3 md:col-span-2">Modified</div>
                 <div className="col-span-2">Size</div>
                 <div className="col-span-1"></div>
               </div>
 
               {/* Rows */}
-              <div className="divide-y">
+              <div className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
                 {driveItems.map((driveItem) => {
                   if (driveItem.type === "folder") {
                     const folder = driveItem.folder!;
@@ -737,22 +756,24 @@ export default function DropsPage() {
                         onClick={() =>
                           handleFolderClick(folder.id, folder.name)
                         }
-                        className="w-full grid grid-cols-12 gap-4 px-4 py-3 hover:bg-muted/50 transition-colors text-left"
+                        className="w-full grid grid-cols-12 gap-4 px-6 py-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors text-left group"
                       >
-                        <div className="col-span-6 flex items-center gap-3">
-                          <Folder className="w-8 h-8 text-muted-foreground shrink-0" />
-                          <span className="truncate font-medium">
+                        <div className="col-span-6 md:col-span-7 flex items-center gap-4">
+                          <div className="size-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 group-hover:bg-primary/10 group-hover:text-primary">
+                            <Folder className="size-5 text-muted-foreground transition-colors group-hover:text-primary" />
+                          </div>
+                          <span className="truncate font-semibold tracking-tight text-foreground group-hover:text-primary transition-colors">
                             {folder.name}
                           </span>
                         </div>
-                        <div className="col-span-3 flex items-center text-sm text-muted-foreground">
+                        <div className="col-span-3 md:col-span-2 flex items-center text-sm font-medium text-muted-foreground">
                           {new Date(folder.createdAt).toLocaleDateString()}
                         </div>
-                        <div className="col-span-2 flex items-center text-sm text-muted-foreground">
+                        <div className="col-span-2 flex items-center text-sm font-medium text-muted-foreground">
                           {folder.itemCount} items
                         </div>
                         <div className="col-span-1 flex items-center justify-end">
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          <ChevronRight className="size-5 text-muted-foreground/50 transition-transform group-hover:text-primary group-hover:translate-x-1" />
                         </div>
                       </button>
                     );
@@ -769,24 +790,31 @@ export default function DropsPage() {
                     <Link
                       key={driveItem.id}
                       href={`/drops/${item.id}`}
-                      className="grid grid-cols-12 gap-4 px-4 py-3 hover:bg-muted/50 transition-colors text-left"
+                      className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors text-left group"
                     >
-                      <div className="col-span-6 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded flex items-center justify-center bg-muted">
-                          <FileIcon className={cn("w-5 h-5", iconColor)} />
+                      <div className="col-span-6 md:col-span-7 flex items-center gap-4">
+                        <div className="size-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 shadow-sm">
+                          <FileIcon className={cn("size-5", iconColor)} />
                         </div>
-                        <div className="min-w-0">
-                          <p className="truncate font-medium">{item.title}</p>
+                        <div className="min-w-0 flex flex-col">
+                          <p className="truncate font-semibold tracking-tight text-foreground group-hover:text-primary transition-colors">
+                            {item.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate sm:hidden mt-0.5">
+                            {formatBytes(fileSize)} • {new Date(item.createdAt).toLocaleDateString()}
+                          </p>
                         </div>
                       </div>
-                      <div className="col-span-3 flex items-center text-sm text-muted-foreground">
+                      <div className="hidden sm:flex col-span-3 md:col-span-2 items-center text-sm font-medium text-muted-foreground">
                         {new Date(item.createdAt).toLocaleDateString()}
                       </div>
-                      <div className="col-span-2 flex items-center text-sm text-muted-foreground">
+                      <div className="hidden sm:flex col-span-2 items-center text-sm font-medium text-muted-foreground tabular-nums">
                         {formatBytes(fileSize)}
                       </div>
-                      <div className="col-span-1 flex items-center justify-end">
-                        <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                      <div className="col-span-6 sm:col-span-1 flex items-center justify-end">
+                        <Button variant="ghost" size="icon" className="size-8 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                          <MoreVertical className="size-4 text-muted-foreground" />
+                        </Button>
                       </div>
                     </Link>
                   );

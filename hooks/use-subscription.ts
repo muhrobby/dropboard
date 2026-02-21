@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { type TierLimits } from "@/lib/tier-guard";
 
 interface SubscriptionUsage {
   storageUsed: number;
@@ -13,6 +14,7 @@ interface SubscriptionData {
   autoRenewal: boolean;
   features: string[];
   usage: SubscriptionUsage;
+  tierLimits?: TierLimits;
 }
 
 interface SubscriptionResponse {

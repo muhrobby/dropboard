@@ -24,7 +24,11 @@ import {
 import { Copy, Check, UserPlus, Mail, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-export function InviteDialog() {
+interface InviteDialogProps {
+  disabled?: boolean;
+}
+
+export function InviteDialog({ disabled = false }: InviteDialogProps) {
   const [open, setOpen] = useState(false);
   const [identifier, setIdentifier] = useState("");
   const [role, setRole] = useState<"member" | "admin">("member");
@@ -111,12 +115,13 @@ export function InviteDialog() {
     <Dialog
       open={open}
       onOpenChange={(v) => {
+        if (disabled && v) return;
         setOpen(v);
         if (!v) reset();
       }}
     >
       <DialogTrigger asChild>
-        <Button size="sm">
+        <Button size="sm" disabled={disabled}>
           <UserPlus className="mr-2 h-4 w-4" />
           Invite
         </Button>

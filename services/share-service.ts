@@ -5,6 +5,7 @@ import { randomBytes } from "crypto";
 import { ulid } from "ulid";
 import { NotFoundError, ForbiddenError, ValidationError } from "@/lib/errors";
 import { logActivity } from "./activity-service";
+import { redis } from "@/lib/redis";
 
 const EXPIRY_OPTIONS = {
   "1d": 1,
@@ -81,6 +82,50 @@ export async function createShare(
 }
 
 export async function getShareByToken(token: string) {
+  const cacheKey = `share:token:${token}`;
+  
+  if (redis) {
+    const cachedData = await redis.get(cacheKey);
+    if (cachedData) {
+      // Refresh DB data in background if needed, but for now just return cache
+      const data = typeof cachedData === 'string' ? JSON.parse(cachedData) : cachedData;
+      
+      // Parse dates since JSON serialization loses them
+      if (data.share.expiresAt) data.share.expiresAt = new Date(data.share.expiresAt);
+      if (data.share.createdAt) data.share.createdAt = new Date(data.share.createdAt);
+      if (data.item.expiresAt) data.item.expiresAt = new Date(data.item.expiresAt);
+      if (data.item.createdAt) data.item.createdAt = new Date(data.item.createdAt);
+      if (data.item.updatedAt) data.item.updatedAt = new Date(data.item.updatedAt);
+      if (data.item.deletedAt) data.item.deletedAt = new Date(data.item.deletedAt);
+      
+      if (data.fileAsset) {
+        if (data.fileAsset.createdAt) data.fileAsset.createdAt = new Date(data.fileAsset.createdAt);
+        if (data.fileAsset.updatedAt) data.fileAsset.updatedAt = new Date(data.fileAsset.updatedAt);
+      }
+      
+      // Still need to perform real-time checks for limits
+      if (data.share.expiresAt && data.share.expiresAt < new Date()) {
+        throw new ValidationError("Share link has expired");
+      }
+      if (data.item.expiresAt && data.item.expiresAt < new Date()) {
+        throw new ValidationError("Shared item has expired");
+      }
+      
+      // For maxDownloads we need real-time count.
+      // To keep it simple but accurate, we will fetch the live item if there's a limit.
+      if (data.item.maxDownloads !== null) {
+        const liveItem = await db.query.items.findFirst({
+          where: eq(items.id, data.item.id),
+        });
+        if (liveItem && liveItem.maxDownloads !== null && liveItem.downloadCount >= liveItem.maxDownloads) {
+          throw new ValidationError("Shared item has reached its download limit");
+        }
+      }
+      
+      return data;
+    }
+  }
+
   const share = await db.query.shares.findFirst({
     where: eq(shares.token, token),
   });
@@ -103,6 +148,16 @@ export async function getShareByToken(token: string) {
     throw new NotFoundError("Shared item no longer exists");
   }
 
+  // Check item expiry
+  if (item.expiresAt && item.expiresAt < new Date()) {
+    throw new ValidationError("Shared item has expired");
+  }
+
+  // Check item max downloads
+  if (item.maxDownloads !== null && item.downloadCount >= item.maxDownloads) {
+    throw new ValidationError("Shared item has reached its download limit");
+  }
+
   // Get file asset if item is a drop
   let fileAsset = null;
   if (item.type === "drop" && item.fileAssetId) {
@@ -111,7 +166,18 @@ export async function getShareByToken(token: string) {
     });
   }
 
-  return { share, item, fileAsset };
+  const result = { share, item, fileAsset };
+
+  // Cache for 1 minute
+  if (redis) {
+    // Avoid caching if max downloads is very close to being reached
+    const shouldCache = item.maxDownloads === null || (item.maxDownloads - item.downloadCount > 5);
+    if (shouldCache) {
+      await redis.setex(cacheKey, 60, JSON.stringify(result));
+    }
+  }
+
+  return result;
 }
 
 export async function getShareByItemId(itemId: string) {

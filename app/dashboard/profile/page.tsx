@@ -96,9 +96,19 @@ export default function ProfilePage() {
 
     if (isPending) {
         return (
-            <div className="p-4 md:p-6 space-y-6">
-                <Skeleton className="h-8 w-48" />
-                <Skeleton className="h-64 w-full max-w-2xl" />
+            <div className="flex flex-col h-full relative">
+                <header className="shrink-0 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50 sticky top-0 z-20">
+                    <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6">
+                        <Skeleton className="h-8 w-48 mb-2" />
+                        <Skeleton className="h-4 w-64" />
+                    </div>
+                </header>
+                <div className="flex-1 overflow-y-auto bg-zinc-50/50 dark:bg-zinc-950/50 p-4 sm:p-6 md:p-8">
+                    <div className="max-w-3xl mx-auto space-y-6">
+                        <Skeleton className="h-48 w-full rounded-2xl" />
+                        <Skeleton className="h-64 w-full rounded-2xl" />
+                    </div>
+                </div>
             </div>
         );
     }
@@ -106,52 +116,53 @@ export default function ProfilePage() {
     const user = session?.user;
 
     return (
-        <div className="flex flex-col h-full">
-            {/* Header */}
-            <div className="border-b bg-background">
-                <div className="p-4 md:p-6">
+        <div className="flex flex-col h-full relative">
+            <header className="shrink-0 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50 sticky top-0 z-20">
+                <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6">
                     <PageHeader
                         title="Profile"
-                        description="Manage your account settings"
+                        description="Manage your account settings and personal information"
                     />
                 </div>
-            </div>
+            </header>
 
-            {/* Content */}
-            <div className="flex-1 overflow-auto p-4 md:p-6 pb-20 md:pb-6">
-                <div className="max-w-2xl space-y-6">
+            <div className="flex-1 overflow-y-auto bg-zinc-50/50 dark:bg-zinc-950/50 p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8 animate-in fade-in duration-500 pb-24 md:pb-8">
+                <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8">
                     {/* Profile Picture */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                                <Camera className="h-5 w-5" />
+                    <Card className="rounded-2xl border-zinc-200/50 dark:border-zinc-800/50 shadow-sm bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm overflow-hidden">
+                        <CardHeader className="border-b border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/50 dark:bg-zinc-900/20 px-6 py-5">
+                            <CardTitle className="flex items-center gap-2.5 text-lg font-medium">
+                                <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                                    <Camera className="h-4 w-4" />
+                                </div>
                                 Profile Picture
                             </CardTitle>
-                            <CardDescription>
+                            <CardDescription className="ml-11 mt-1 text-[13px]">
                                 Your profile photo will be visible to team members
                             </CardDescription>
                         </CardHeader>
-                        <CardContent>
-                            <div className="flex items-center gap-4">
-                                <Avatar className="h-20 w-20">
-                                    <AvatarImage src={user?.image || ""} alt={user?.name || ""} />
-                                    <AvatarFallback className="text-xl">
+                        <CardContent className="p-6">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                                <Avatar className="h-24 w-24 rounded-2xl border-2 border-white dark:border-zinc-800 shadow-sm">
+                                    <AvatarImage src={user?.image || ""} alt={user?.name || ""} className="object-cover" />
+                                    <AvatarFallback className="text-2xl bg-zinc-100 dark:bg-zinc-800 rounded-2xl">
                                         {user?.name ? getInitials(user.name) : "?"}
                                     </AvatarFallback>
                                 </Avatar>
-                                <div className="space-y-2">
-                                    <p className="text-sm text-muted-foreground">
+                                <div className="space-y-3 flex-1">
+                                    <p className="text-sm font-medium text-foreground">
                                         Upload a new photo or remove current one
                                     </p>
-                                    <div className="flex gap-2">
-                                        <Button variant="outline" size="sm" disabled>
+                                    <div className="flex flex-wrap gap-3">
+                                        <Button variant="outline" className="rounded-xl h-9 shadow-sm" disabled>
                                             Upload Photo
                                         </Button>
-                                        <Button variant="ghost" size="sm" disabled>
+                                        <Button variant="ghost" className="rounded-xl h-9 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-500" disabled>
                                             Remove
                                         </Button>
                                     </div>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-[13px] text-muted-foreground flex items-center gap-1.5">
+                                        <Loader2 className="h-3 w-3 animate-spin" />
                                         Coming soon: Profile picture upload
                                     </p>
                                 </div>
@@ -160,30 +171,33 @@ export default function ProfilePage() {
                     </Card>
 
                     {/* Display Name */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                                <User className="h-5 w-5" />
+                    <Card className="rounded-2xl border-zinc-200/50 dark:border-zinc-800/50 shadow-sm bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm overflow-hidden">
+                        <CardHeader className="border-b border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/50 dark:bg-zinc-900/20 px-6 py-5">
+                            <CardTitle className="flex items-center gap-2.5 text-lg font-medium">
+                                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                                    <User className="h-4 w-4" />
+                                </div>
                                 Display Name
                             </CardTitle>
-                            <CardDescription>
-                                This is how others will see you
+                            <CardDescription className="ml-11 mt-1 text-[13px]">
+                                This is how others will see you in the workspace
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Name</Label>
+                        <CardContent className="p-6 space-y-5">
+                            <div className="space-y-2.5 max-w-md">
+                                <Label htmlFor="name" className="text-sm font-medium text-foreground">Full Name</Label>
                                 <Input
                                     id="name"
                                     value={name || user?.name || ""}
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder="Your name"
+                                    className="h-10 rounded-xl bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary/20 shadow-sm"
                                 />
                             </div>
                             <Button
                                 onClick={handleUpdateName}
                                 disabled={isUpdatingName || !name.trim() || name === user?.name}
-                                size="sm"
+                                className="rounded-xl h-10 px-5 shadow-sm"
                             >
                                 {isUpdatingName && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Save Name
@@ -192,81 +206,92 @@ export default function ProfilePage() {
                     </Card>
 
                     {/* Email */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                                <Mail className="h-5 w-5" />
+                    <Card className="rounded-2xl border-zinc-200/50 dark:border-zinc-800/50 shadow-sm bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm overflow-hidden">
+                        <CardHeader className="border-b border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/50 dark:bg-zinc-900/20 px-6 py-5">
+                            <CardTitle className="flex items-center gap-2.5 text-lg font-medium">
+                                <div className="p-2 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400">
+                                    <Mail className="h-4 w-4" />
+                                </div>
                                 Email Address
                             </CardTitle>
-                            <CardDescription>
+                            <CardDescription className="ml-11 mt-1 text-[13px]">
                                 Your email is used for login and notifications
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Current Email</Label>
+                        <CardContent className="p-6 space-y-4">
+                            <div className="space-y-2.5 max-w-md">
+                                <Label className="text-sm font-medium text-foreground">Current Email</Label>
                                 <Input
                                     value={user?.email || ""}
                                     disabled
-                                    className="bg-muted"
+                                    className="h-10 rounded-xl bg-zinc-100 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 text-muted-foreground opacity-100"
                                 />
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                                Contact support to change your email address
+                            <p className="text-[13px] text-muted-foreground">
+                                Contact support if you need to change your email address.
                             </p>
                         </CardContent>
                     </Card>
 
                     {/* Change Password */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                                <Lock className="h-5 w-5" />
+                    <Card className="rounded-2xl border-zinc-200/50 dark:border-zinc-800/50 shadow-sm bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm overflow-hidden">
+                        <CardHeader className="border-b border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/50 dark:bg-zinc-900/20 px-6 py-5">
+                            <CardTitle className="flex items-center gap-2.5 text-lg font-medium">
+                                <div className="p-2 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400">
+                                    <Lock className="h-4 w-4" />
+                                </div>
                                 Change Password
                             </CardTitle>
-                            <CardDescription>
+                            <CardDescription className="ml-11 mt-1 text-[13px]">
                                 Update your password to keep your account secure
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="current-password">Current Password</Label>
+                        <CardContent className="p-6 space-y-6">
+                            <div className="space-y-2.5 max-w-md">
+                                <Label htmlFor="current-password" className="text-sm font-medium text-foreground">Current Password</Label>
                                 <Input
                                     id="current-password"
                                     type="password"
                                     value={currentPassword}
                                     onChange={(e) => setCurrentPassword(e.target.value)}
                                     placeholder="Enter current password"
+                                    className="h-10 rounded-xl bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary/20 shadow-sm"
                                 />
                             </div>
-                            <Separator />
-                            <div className="space-y-2">
-                                <Label htmlFor="new-password">New Password</Label>
-                                <Input
-                                    id="new-password"
-                                    type="password"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                    placeholder="Enter new password"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="confirm-password">Confirm New Password</Label>
-                                <Input
-                                    id="confirm-password"
-                                    type="password"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    placeholder="Confirm new password"
-                                />
+                            
+                            <Separator className="bg-zinc-200/50 dark:bg-zinc-800/50 my-6" />
+                            
+                            <div className="grid gap-6 sm:grid-cols-2 max-w-2xl">
+                                <div className="space-y-2.5">
+                                    <Label htmlFor="new-password" className="text-sm font-medium text-foreground">New Password</Label>
+                                    <Input
+                                        id="new-password"
+                                        type="password"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        placeholder="Enter new password"
+                                        className="h-10 rounded-xl bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary/20 shadow-sm"
+                                    />
+                                </div>
+                                <div className="space-y-2.5">
+                                    <Label htmlFor="confirm-password" className="text-sm font-medium text-foreground">Confirm New Password</Label>
+                                    <Input
+                                        id="confirm-password"
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        placeholder="Confirm new password"
+                                        className="h-10 rounded-xl bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary/20 shadow-sm"
+                                    />
+                                </div>
                             </div>
                             <Button
                                 onClick={handleChangePassword}
                                 disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
-                                size="sm"
+                                className="rounded-xl h-10 px-5 shadow-sm"
                             >
                                 {isChangingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Change Password
+                                Update Password
                             </Button>
                         </CardContent>
                     </Card>

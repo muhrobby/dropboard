@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 import {
   AlertCircle,
   Download,
@@ -293,7 +294,7 @@ export default function SharePage({
               {error || "This share link is invalid or has expired."}
             </p>
             <Button variant="outline" asChild>
-              <a href="/">Go to Homepage</a>
+              <Link href="/">Go to Homepage</Link>
             </Button>
           </CardContent>
         </Card>
@@ -346,9 +347,9 @@ export default function SharePage({
       <div className="fixed bottom-4 left-0 right-0 text-center">
         <p className="text-xs text-muted-foreground">
           Shared via{" "}
-          <a href="/" className="text-primary hover:underline">
+          <Link href="/" className="text-primary hover:underline">
             Dropboard
-          </a>
+          </Link>
         </p>
       </div>
     </div>

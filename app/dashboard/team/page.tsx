@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
 import { useWorkspaceStore } from "@/stores/workspace-store";
+import { useSubscription } from "@/hooks/use-subscription";
 import {
   useMembers,
   useUpdateMemberRole,
@@ -53,12 +55,47 @@ function formatDate(dateStr: string) {
   });
 }
 
+function StatCard({
+  icon,
+  label,
+  value,
+  subtext,
+  color,
+  bgColor,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  subtext?: string;
+  color: string;
+  bgColor: string;
+}) {
+  const Icon = icon;
+  return (
+    <Card className="p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-center gap-4">
+        <div className={cn("flex items-center justify-center w-12 h-12 rounded-xl", bgColor)}>
+          <Icon className={cn("w-6 h-6", color)} />
+        </div>
+        <div className="flex-1">
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="text-2xl font-bold">{value}</p>
+          {subtext && (
+            <p className="text-xs text-muted-foreground mt-0.5">{subtext}</p>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export default function TeamPage() {
   const { data: session } = useSession();
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
   const workspace = useWorkspaceStore((s) => s.getActiveWorkspace());
   const { data: members, isLoading: membersLoading } = useMembers();
   const { data: invites, isLoading: invitesLoading } = useInvites();
+  const { data: subscription } = useSubscription();
   const updateRole = useUpdateMemberRole();
   const removeMember = useRemoveMember();
   const cancelInvite = useCancelInvite();
@@ -67,6 +104,10 @@ export default function TeamPage() {
   const canManageMembers = canDo(currentUserRole, "manage_members");
   const canInvite = canDo(currentUserRole, "invite_members");
   const isTeamWorkspace = workspace?.type === "team";
+  const maxTeamMembers = subscription?.tierLimits?.maxTeamMembers || 0;
+  const currentMemberCount = members?.length || 0;
+  const isFreeTier = subscription?.plan === "Free";
+  const canAddMoreMembers = maxTeamMembers === -1 || currentMemberCount < maxTeamMembers;
 
   async function handleRoleChange(userId: string, role: string) {
     try {
@@ -106,40 +147,6 @@ export default function TeamPage() {
     });
   }
 
-  function StatCard({
-    icon,
-    label,
-    value,
-    subtext,
-    color,
-    bgColor,
-  }: {
-    icon: React.ElementType;
-    label: string;
-    value: string | number;
-    subtext?: string;
-    color: string;
-    bgColor: string;
-  }) {
-    const Icon = icon;
-    return (
-      <Card className="p-4 hover:shadow-md transition-shadow">
-        <div className="flex items-center gap-4">
-          <div className={cn("flex items-center justify-center w-12 h-12 rounded-xl", bgColor)}>
-            <Icon className={cn("w-6 h-6", color)} />
-          </div>
-          <div className="flex-1">
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="text-2xl font-bold">{value}</p>
-            {subtext && (
-              <p className="text-xs text-muted-foreground mt-0.5">{subtext}</p>
-            )}
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
   if (!isTeamWorkspace) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
@@ -161,13 +168,45 @@ export default function TeamPage() {
             title="Team"
             description="Manage members and invitations"
           >
-            {canInvite && <InviteDialog />}
+            <div className="flex items-center gap-4">
+              {!isFreeTier && maxTeamMembers > 0 && (
+                <span className="text-sm font-medium text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-md">
+                  {currentMemberCount} / {maxTeamMembers === -1 ? 'Unlimited' : maxTeamMembers} Members
+                </span>
+              )}
+              {canInvite && (
+                <div className="relative">
+                  <InviteDialog 
+                    disabled={!canAddMoreMembers} 
+                  />
+                  {!canAddMoreMembers && (
+                    <div className="absolute inset-0 cursor-not-allowed z-10" title="Member limit reached" />
+                  )}
+                </div>
+              )}
+            </div>
           </PageHeader>
         </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-4 md:p-6 space-y-6 pb-20 md:pb-6">
+        
+        {isFreeTier && (
+          <Card className="rounded-2xl border-primary/20 bg-primary/5 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-2">
+            <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-medium text-primary mb-1">Team Workspaces are a Premium Feature</h3>
+                <p className="text-xs text-muted-foreground">
+                  Upgrade your plan to invite members, assign roles, and collaborate on items.
+                </p>
+              </div>
+              <Button variant="default" className="rounded-full shrink-0" asChild>
+                <Link href="/dashboard/settings/billing">Upgrade Plan</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stat Cards */}
         {!membersLoading && !invitesLoading && (

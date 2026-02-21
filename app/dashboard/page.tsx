@@ -31,6 +31,7 @@ import {
   SectionHeader,
 } from "@/components/patterns";
 import { useSubscription } from "@/hooks/use-subscription";
+import { cn } from "@/lib/utils";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -180,82 +181,144 @@ export default function DashboardPage() {
         <OverviewContent>
           {/* Main – Storage Progress */}
           <OverviewMain>
-            <Card>
-              <CardHeader>
-                <SectionHeader
-                  title="Storage Overview"
-                  description="Your current storage usage"
-                />
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Used</span>
-                  <span className="font-medium tabular-nums">
-                    {formatBytes(storageUsed)} /{" "}
-                    {formatBytes(storageLimit)}
-                  </span>
+            <Card className="h-full border-zinc-200/60 dark:border-zinc-800/60 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm">
+              <CardHeader className="pb-4">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold tracking-tight">Storage Overview</h2>
+                    <div className="p-2 bg-primary/5 text-primary rounded-xl">
+                      <HardDrive className="size-5" />
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Monitor your workspace storage usage</p>
                 </div>
-                <Progress value={storagePercent} className="h-2" />
-                <p className="text-xs text-muted-foreground">
-                  {storagePercent > 90
-                    ? "⚠️ Almost full – consider upgrading or cleaning up files"
-                    : storagePercent > 70
-                      ? "Getting close to limit"
-                      : "Plenty of space available"}
-                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="space-y-1">
+                    <p className="font-semibold text-foreground tracking-tight">Space Used</p>
+                    <p className="text-muted-foreground">{storagePercent}% of total capacity</p>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <p className="font-semibold text-foreground tracking-tight tabular-nums">
+                      {formatBytes(storageUsed)}
+                    </p>
+                    <p className="text-muted-foreground tabular-nums">
+                      of {formatBytes(storageLimit)}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Progress 
+                    value={storagePercent} 
+                    className="h-3 rounded-full bg-zinc-100 dark:bg-zinc-800" 
+                    indicatorClassName={cn(
+                      storagePercent > 90 ? "bg-rose-500" : storagePercent > 70 ? "bg-amber-500" : "bg-primary"
+                    )}
+                  />
+                </div>
+                
+                <div className="pt-2 flex items-start gap-3 text-sm">
+                  <div className={cn(
+                    "mt-0.5 p-1 rounded-full",
+                    storagePercent > 90 ? "bg-rose-500/10 text-rose-600" : storagePercent > 70 ? "bg-amber-500/10 text-amber-600" : "bg-emerald-500/10 text-emerald-600"
+                  )}>
+                    {storagePercent > 90 ? <Activity className="size-3.5" /> : storagePercent > 70 ? <Activity className="size-3.5" /> : <Activity className="size-3.5" />}
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed flex-1">
+                    {storagePercent > 90
+                      ? "⚠️ You are critically close to your storage limit. Please upgrade your plan or remove old files."
+                      : storagePercent > 70
+                        ? "You're starting to use a significant portion of your storage. Keep an eye on it."
+                        : "You have plenty of space available. Keep uploading and collaborating!"}
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </OverviewMain>
 
           {/* Side – Workspace Info */}
           <OverviewSide>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Workspace Info</CardTitle>
+            <Card className="h-full border-zinc-200/60 dark:border-zinc-800/60 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/5 text-primary rounded-xl">
+                    <FolderOpen className="size-5" />
+                  </div>
+                  <CardTitle className="text-lg">Workspace Details</CardTitle>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Name</span>
-                  <span className="font-medium">{workspace?.name ?? "—"}</span>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
+                    <span className="text-sm text-muted-foreground">Name</span>
+                    <span className="font-semibold text-foreground tracking-tight">{workspace?.name ?? "—"}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
+                    <span className="text-sm text-muted-foreground">Type</span>
+                    <span className="font-medium text-xs uppercase tracking-widest px-2 py-1 rounded-md bg-zinc-100 dark:bg-zinc-800 text-foreground">
+                      {workspace?.type ?? "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-zinc-100 dark:border-zinc-800">
+                    <span className="text-sm text-muted-foreground">Members</span>
+                    <span className="font-semibold text-foreground tracking-tight tabular-nums">
+                      {members?.length ?? 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-sm text-muted-foreground">Current Plan</span>
+                    <div className="flex items-center gap-2">
+                      <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="font-semibold text-foreground tracking-tight">{planName}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Type</span>
-                  <span className="font-medium capitalize">
-                    {workspace?.type ?? "—"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Members</span>
-                  <span className="font-medium tabular-nums">
-                    {members?.length ?? 0}
-                  </span>
-                </div>
+                
+                <Button className="w-full" variant="outline" asChild>
+                  <Link href="/dashboard/settings">
+                    Manage Workspace
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
           </OverviewSide>
         </OverviewContent>
 
         {/* Quick Actions Grid */}
-        <div>
-          <SectionHeader title="Quick Actions" className="mb-4" />
+        <div className="mt-12">
+          <SectionHeader
+            title="Quick Actions"
+            description="Jump right back into your workflow"
+            className="mb-6"
+          />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {quickLinks.map((link) => (
               <Link key={link.href} href={link.href}>
-                <Card className="group transition-all hover:shadow-md hover:border-primary/20">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <div className={`p-2.5 rounded-lg ${link.bgColor}`}>
-                        <link.icon className={`h-5 w-5 ${link.color}`} />
+                <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/30 border-zinc-200/60 dark:border-zinc-800/60 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm">
+                  <CardContent className="p-5">
+                    <div className="flex items-start gap-4 relative z-10">
+                      <div
+                        className={cn(
+                          "p-3 rounded-xl transition-transform duration-300 group-hover:scale-110",
+                          link.bgColor
+                        )}
+                      >
+                        <link.icon className={cn("size-5", link.color)} />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm">{link.title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                      <div className="flex-1 min-w-0 pt-0.5">
+                        <p className="font-semibold text-[15px] tracking-tight text-foreground group-hover:text-primary transition-colors">
+                          {link.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed pr-6">
                           {link.description}
                         </p>
                       </div>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 size-4 text-primary opacity-0 -translate-x-4 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300" />
                     </div>
                   </CardContent>
+                  <div className="absolute inset-0 bg-gradient-to-br from-transparent to-primary/[0.02] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                 </Card>
               </Link>
             ))}

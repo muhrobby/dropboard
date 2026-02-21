@@ -105,7 +105,7 @@ function createGatewayInstance(
  * Xendit Payment Gateway Implementation
  */
 class XenditGateway implements PaymentGateway {
-    provider: "xendit" = "xendit";
+    readonly provider = "xendit";
     private secretKey: string;
     private callbackToken: string;
     private baseUrl = "https://api.xendit.co";
@@ -211,7 +211,7 @@ class XenditGateway implements PaymentGateway {
  * DOKU Payment Gateway Implementation
  */
 class DOKUGateway implements PaymentGateway {
-    provider: "doku" = "doku";
+    readonly provider = "doku";
     private clientId: string;
     private secretKey: string;
     private baseUrl: string;

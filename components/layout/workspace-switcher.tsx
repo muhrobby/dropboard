@@ -56,18 +56,18 @@ export function WorkspaceSwitcher() {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <Select
         value={activeWorkspaceId || undefined}
         onValueChange={setActiveWorkspace}
       >
-        <SelectTrigger className="w-full">
+        <SelectTrigger className="w-full h-11 rounded-xl bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm transition-all focus:ring-primary/20">
           <SelectValue placeholder="Select workspace" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="rounded-xl shadow-xl border-zinc-200 dark:border-zinc-800 animate-in fade-in zoom-in-95">
           {workspaces.map((w) => (
-            <SelectItem key={w.id} value={w.id}>
-              <span className="truncate">{w.name}</span>
+            <SelectItem key={w.id} value={w.id} className="rounded-lg py-2.5 cursor-pointer">
+              <span className="font-medium truncate">{w.name}</span>
             </SelectItem>
           ))}
         </SelectContent>
@@ -75,9 +75,9 @@ export function WorkspaceSwitcher() {
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="w-full">
-            <Plus className="mr-2 h-3 w-3" />
-            New Workspace
+          <Button variant="outline" className="w-full h-10 rounded-xl border-dashed border-zinc-300 dark:border-zinc-700 bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900/50 text-muted-foreground hover:text-foreground transition-all group">
+            <Plus className="mr-2 size-4 transition-transform group-hover:scale-110" />
+            <span className="font-medium">New Workspace</span>
           </Button>
         </DialogTrigger>
         <DialogContent>

@@ -19,6 +19,7 @@ import { useEffect } from "react";
 type UploadDropzoneProps = {
   onFilesSelected: (files: File[]) => void;
   maxFiles?: number;
+  maxSizeBytes?: number;
   disabled?: boolean;
 };
 
@@ -28,12 +29,13 @@ type FileWithPreview = {
   id: string;
 };
 
-function validateFile(file: File): string | null {
+function validateFile(file: File, maxSizeBytes: number = MAX_UPLOAD_SIZE_BYTES): string | null {
   if (!ALLOWED_FILE_TYPES.includes(file.type)) {
     return `"${file.name}" is not a supported file type.`;
   }
-  if (file.size > MAX_UPLOAD_SIZE_BYTES) {
-    return `"${file.name}" exceeds the ${MAX_UPLOAD_SIZE_MB}MB size limit.`;
+  if (file.size > maxSizeBytes) {
+    const maxSizeMB = Math.round(maxSizeBytes / (1024 * 1024));
+    return `"${file.name}" exceeds the ${maxSizeMB}MB size limit for your current plan.`;
   }
   return null;
 }
@@ -62,6 +64,7 @@ function getFileColor(mimeType: string): string {
 export function UploadDropzone({
   onFilesSelected,
   maxFiles = 5,
+  maxSizeBytes = MAX_UPLOAD_SIZE_BYTES,
   disabled = false,
 }: UploadDropzoneProps) {
   const [isDragging, setIsDragging] = useState(false);
@@ -89,7 +92,7 @@ export function UploadDropzone({
       // Validate all files
       const fileWithPreview: FileWithPreview[] = [];
       for (const file of newFiles) {
-        const err = validateFile(file);
+        const err = validateFile(file, maxSizeBytes);
         if (err) {
           setError(err);
           return;
@@ -242,7 +245,7 @@ export function UploadDropzone({
             )}
           </p>
           <p className="text-sm text-muted-foreground">
-            Up to {maxFiles} files • Max {MAX_UPLOAD_SIZE_MB}MB each
+            Up to {maxFiles} files • Max {Math.round(maxSizeBytes / (1024 * 1024))}MB each
           </p>
           <p className="text-xs text-muted-foreground/60 mt-2">
             Images, PDF, Documents, Archives

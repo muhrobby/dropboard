@@ -26,8 +26,27 @@ export async function GET() {
             .from(subscriptions)
             .where(eq(subscriptions.status, "active"));
 
-        // Mock recent activity data for chart (DB doesn't have daily aggregation yet)
-        // In a real app, we would query daily revenue here
+        // Daily revenue for the last 7 days
+        const dailyRevenue = await db
+            .select({
+                date: sql<string>`DATE_TRUNC('day', ${topupOrders.createdAt})::date::text`,
+                amount: sql<number>`COALESCE(SUM(${topupOrders.amount}), 0)::int`
+            })
+            .from(topupOrders)
+            .where(sql`${topupOrders.status} = 'PAID' AND ${topupOrders.createdAt} >= NOW() - INTERVAL '7 days'`)
+            .groupBy(sql`DATE_TRUNC('day', ${topupOrders.createdAt})::date`)
+            .orderBy(sql`DATE_TRUNC('day', ${topupOrders.createdAt})::date ASC`);
+
+        // Daily new users for the last 7 days
+        const dailyUsers = await db
+            .select({
+                date: sql<string>`DATE_TRUNC('day', ${users.createdAt})::date::text`,
+                count: sql<number>`COUNT(*)::int`
+            })
+            .from(users)
+            .where(sql`${users.createdAt} >= NOW() - INTERVAL '7 days'`)
+            .groupBy(sql`DATE_TRUNC('day', ${users.createdAt})::date`)
+            .orderBy(sql`DATE_TRUNC('day', ${users.createdAt})::date ASC`);
 
         // Get recent orders for list
         const recentOrders = await db.query.topupOrders.findMany({
@@ -44,7 +63,9 @@ export async function GET() {
                 users: userCountResult?.value || 0,
                 storage: storageResult?.value || 0,
                 activeSubscriptions: subCountResult?.value || 0,
-                recentOrders
+                recentOrders,
+                dailyRevenue,
+                dailyUsers
             }
         });
 

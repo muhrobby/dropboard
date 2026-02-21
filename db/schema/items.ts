@@ -5,6 +5,7 @@ import {
   pgEnum,
   boolean,
   timestamp,
+  integer,
   index,
 } from "drizzle-orm/pg-core";
 import { ulid } from "ulid";
@@ -29,9 +30,12 @@ export const items = pgTable(
     title: varchar("title", { length: 255 }).notNull(),
     content: text("content"),
     note: text("note"),
+    passwordHash: text("password_hash"),
     tags: text("tags").array().notNull().default([]),
     isPinned: boolean("is_pinned").notNull().default(false),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
+    maxDownloads: integer("max_downloads"),
+    downloadCount: integer("download_count").notNull().default(0),
     fileAssetId: text("file_asset_id"),
     // OCR extracted text for image files
     ocrText: text("ocr_text"),

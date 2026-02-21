@@ -99,6 +99,7 @@ export type ItemResponse = {
   content: string | null;
   note: string | null;
   tags: string[];
+  isProtected?: boolean;
   isPinned: boolean;
   expiresAt: string | null;
   fileAssetId: string | null;

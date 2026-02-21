@@ -1,6 +1,12 @@
 import { z } from "zod/v4";
 import { ALLOWED_FILE_TYPES, MAX_UPLOAD_SIZE_MB } from "@/lib/constants";
 
+const baseItemOptions = {
+  password: z.string().min(1, "Password must not be empty").optional(),
+  retentionDays: z.number().int().positive().optional(),
+  maxDownloads: z.number().int().positive().optional(),
+};
+
 export const createDropSchema = z.object({
   title: z
     .string()
@@ -9,6 +15,7 @@ export const createDropSchema = z.object({
   note: z.string().max(5000, "Note must be 5000 characters or less").optional(),
   tags: z.array(z.string().max(50)).max(10, "Maximum 10 tags").default([]),
   isPinned: z.boolean().default(false),
+  ...baseItemOptions,
 });
 
 export const createLinkSchema = z.object({
@@ -19,6 +26,7 @@ export const createLinkSchema = z.object({
     .optional(),
   note: z.string().max(5000, "Note must be 5000 characters or less").optional(),
   tags: z.array(z.string().max(50)).max(10, "Maximum 10 tags").default([]),
+  ...baseItemOptions,
 });
 
 export const createNoteSchema = z.object({
@@ -31,6 +39,7 @@ export const createNoteSchema = z.object({
     .min(1, "Note content is required")
     .max(50000, "Note must be 50000 characters or less"),
   tags: z.array(z.string().max(50)).max(10, "Maximum 10 tags").default([]),
+  ...baseItemOptions,
 });
 
 export const updateItemSchema = z.object({

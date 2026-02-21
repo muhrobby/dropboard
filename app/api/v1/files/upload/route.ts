@@ -18,6 +18,7 @@ import {
   QuotaExceededError,
 } from "@/lib/errors";
 import { getClientIP, rateLimiters, RateLimitError } from "@/lib/rate-limit";
+import bcrypt from "bcrypt";
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
     // Mencegah flood attack dan abuse
     const ip = getClientIP(request);
     try {
-      rateLimiters.upload(ip);
+      await rateLimiters.upload(ip);
     } catch (error) {
       if (error instanceof RateLimitError) {
         return NextResponse.json(
@@ -79,14 +80,22 @@ export async function POST(request: NextRequest) {
     }
 
     const isPinned = isPinnedRaw === "true";
+    const retentionDaysRaw = formData.get("retentionDays") as string | null;
+    const maxDownloadsRaw = formData.get("maxDownloads") as string | null;
+    const password = formData.get("password") as string | null;
 
     // Validate drop metadata
-    const metaResult = createDropSchema.safeParse({
+    const parsedData: Record<string, any> = {
       title: title || file.name,
       note: note || undefined,
       tags,
       isPinned,
-    });
+    };
+    if (retentionDaysRaw) parsedData.retentionDays = parseInt(retentionDaysRaw, 10);
+    if (maxDownloadsRaw) parsedData.maxDownloads = parseInt(maxDownloadsRaw, 10);
+    if (password) parsedData.password = password;
+
+    const metaResult = createDropSchema.safeParse(parsedData);
 
     if (!metaResult.success) {
       const message = metaResult.error.issues
@@ -98,6 +107,11 @@ export async function POST(request: NextRequest) {
     // Upload file
     const uploadResult = await uploadFile(workspaceId, session.user.id, file);
 
+    let passwordHash: string | null = null;
+    if (metaResult.data.password) {
+      passwordHash = await bcrypt.hash(metaResult.data.password, 10);
+    }
+
     // Create item
     const item = await createItem({
       workspaceId,
@@ -107,6 +121,9 @@ export async function POST(request: NextRequest) {
       note: metaResult.data.note,
       tags: metaResult.data.tags,
       isPinned: metaResult.data.isPinned,
+      retentionDays: metaResult.data.retentionDays,
+      maxDownloads: metaResult.data.maxDownloads,
+      passwordHash,
       fileAssetId: uploadResult.fileAssetId,
     });
 

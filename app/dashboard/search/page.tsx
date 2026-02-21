@@ -50,63 +50,72 @@ export default function SearchPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="border-b bg-background">
-        <div className="p-4 md:p-6 space-y-4">
+      <div className="border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-xl sticky top-0 z-20">
+        <div className="p-4 md:p-6 lg:px-8 space-y-6 max-w-7xl mx-auto w-full">
           <PageHeader
             title="Search"
-            description="Find notes, links, and files across your workspace"
+            description="Find notes, links, and files across your entire workspace instantly."
           />
-          <SearchBar
-            query={query}
-            onQueryChange={handleQueryChange}
-            typeFilter={typeFilter}
-            onTypeFilterChange={handleTypeFilterChange}
-            tagsFilter={tagsFilter}
-            onTagsFilterChange={handleTagsFilterChange}
-          />
+          <div className="relative z-30">
+            <SearchBar
+              query={query}
+              onQueryChange={handleQueryChange}
+              typeFilter={typeFilter}
+              onTypeFilterChange={handleTypeFilterChange}
+              tagsFilter={tagsFilter}
+              onTagsFilterChange={handleTagsFilterChange}
+            />
+          </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-4 md:p-6">
-        {showTips ? (
-          <div className="max-w-2xl mx-auto">
-            <Card className="border-dashed">
-              <CardContent className="pt-6">
-                <div className="text-center mb-6">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
-                    <Search className="w-6 h-6 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">Start searching</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Type in the search bar above to find your content
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {searchTips.map((tip, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 transition-colors hover:bg-muted"
-                    >
-                      <tip.icon className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <span className="text-sm text-muted-foreground">{tip.text}</span>
+      <div className="flex-1 overflow-auto bg-zinc-50/50 dark:bg-zinc-950/50 scroll-smooth">
+        <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+          {showTips ? (
+            <div className="max-w-2xl mx-auto mt-8 sm:mt-16 animate-in fade-in zoom-in-95 duration-500">
+              <Card className="border-2 border-dashed border-zinc-200/60 dark:border-zinc-800/60 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm shadow-none">
+                <CardContent className="pt-10 pb-8 px-6 sm:px-10">
+                  <div className="text-center mb-10 relative">
+                    <div className="inline-flex items-center justify-center size-16 rounded-2xl bg-primary/10 text-primary mb-6 shadow-sm ring-1 ring-primary/20">
+                      <Search className="size-8" />
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <SearchResults
-            results={data?.data ?? []}
-            meta={data?.meta ?? { page: 1, limit: 20, total: 0 }}
-            isLoading={isLoading}
-            query={query}
-            page={page}
-            onPageChange={setPage}
-          />
-        )}
+                    <h3 className="text-2xl font-bold tracking-tight text-foreground mb-3">What are you looking for?</h3>
+                    <p className="text-base text-muted-foreground/80 leading-relaxed max-w-sm mx-auto">
+                      Type in the search bar above to instantly find any file, note, or link in your workspace.
+                    </p>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-primary/5 blur-3xl rounded-full pointer-events-none" />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {searchTips.map((tip, index) => (
+                      <div
+                        key={index}
+                        className="group flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30"
+                      >
+                        <div className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                          <tip.icon className="size-4.5" />
+                        </div>
+                        <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">{tip.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <SearchResults
+                results={data?.data ?? []}
+                meta={data?.meta ?? { page: 1, limit: 20, total: 0 }}
+                isLoading={isLoading}
+                query={query}
+                page={page}
+                onPageChange={setPage}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

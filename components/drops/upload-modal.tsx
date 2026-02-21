@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   Dialog,
   DialogContent,
@@ -33,13 +34,16 @@ import {
   Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ALLOWED_FILE_TYPES, MAX_UPLOAD_SIZE_MB } from "@/lib/constants";
+import { ALLOWED_FILE_TYPES, MAX_UPLOAD_SIZE_MB, MAX_UPLOAD_SIZE_BYTES } from "@/lib/constants";
 import { Switch } from "@/components/ui/switch";
+import { useSubscription } from "@/hooks/use-subscription";
 
 export function UploadModal() {
   const isOpen = useUIStore((s) => s.isUploadModalOpen);
   const setOpen = useUIStore((s) => s.setUploadModalOpen);
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
+  const { data: subscription } = useSubscription();
+  const isFreeTier = subscription?.plan === "Free";
   const uploadSingle = useUpload();
   const uploadMultiple = useUploadMultiple();
   const pinItemMutation = usePinItem();
@@ -57,6 +61,9 @@ export function UploadModal() {
   const [retention, setRetention] = useState<"temporary" | "permanent">(
     "temporary",
   );
+  const [retentionDays, setRetentionDays] = useState<string>("");
+  const [maxDownloads, setMaxDownloads] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
 
   // Upload state untuk setiap file
   const [uploadStates, setUploadStates] = useState<
@@ -80,6 +87,9 @@ export function UploadModal() {
     setNote("");
     setTags([]);
     setRetention("temporary");
+    setRetentionDays("");
+    setMaxDownloads("");
+    setPassword("");
     setUploadStates({});
     setIsProcessing(false);
   }
@@ -202,6 +212,9 @@ export function UploadModal() {
           note: note || undefined,
           tags: tags.length > 0 ? tags : undefined,
           isPinned: retention === "permanent",
+          retentionDays: retention === "temporary" && retentionDays ? parseInt(retentionDays, 10) : undefined,
+          maxDownloads: maxDownloads ? parseInt(maxDownloads, 10) : undefined,
+          password: password || undefined,
         });
 
         setUploadStates((prev) => ({
@@ -218,6 +231,9 @@ export function UploadModal() {
           note: note || undefined,
           tags: tags.length > 0 ? tags : undefined,
           isPinned: retention === "permanent",
+          retentionDays: retention === "temporary" && retentionDays ? parseInt(retentionDays, 10) : undefined,
+          maxDownloads: maxDownloads ? parseInt(maxDownloads, 10) : undefined,
+          password: password || undefined,
         });
 
         // Update semua ke success
@@ -353,6 +369,7 @@ export function UploadModal() {
           <UploadDropzone
             onFilesSelected={handleFilesSelected}
             maxFiles={5}
+            maxSizeBytes={subscription?.tierLimits?.maxFileSizeBytes || MAX_UPLOAD_SIZE_BYTES}
             disabled={isUploading || isProcessing}
           />
 
@@ -445,7 +462,67 @@ export function UploadModal() {
               onChange={setRetention}
               disabled={isUploading}
             />
+            {retention === "temporary" && !isFreeTier && (
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="upload-retention-days" className="text-xs text-muted-foreground">Custom Days (Optional)</Label>
+                  <Input
+                    id="upload-retention-days"
+                    type="number"
+                    min="1"
+                    placeholder="7"
+                    value={retentionDays}
+                    onChange={(e) => setRetentionDays(e.target.value)}
+                    disabled={isUploading}
+                  />
+                </div>
+              </div>
+            )}
+            {retention === "temporary" && isFreeTier && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Items will expire in 7 days on the Free tier. Upgrade to set custom retention.
+              </p>
+            )}
           </div>
+
+          {/* Security & Limits */}
+          {!isFreeTier ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="upload-password">Password (Optional)</Label>
+                <Input
+                  id="upload-password"
+                  type="password"
+                  placeholder="Protect with password..."
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isUploading}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="upload-max-downloads">Max Downloads (Optional)</Label>
+                <Input
+                  id="upload-max-downloads"
+                  type="number"
+                  min="1"
+                  placeholder="Leave blank for unlimited"
+                  value={maxDownloads}
+                  onChange={(e) => setMaxDownloads(e.target.value)}
+                  disabled={isUploading}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mt-2">
+              <p className="text-sm font-medium text-primary mb-1">Unlock Premium Features</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Upgrade your plan to unlock Password Protection, Custom Expiry, and Download Limits.
+              </p>
+              <Button variant="default" size="sm" className="w-full" asChild>
+                <Link href="/dashboard/settings/billing">Upgrade Plan</Link>
+              </Button>
+            </div>
+          )}
         </div>
 
         <DialogFooter>

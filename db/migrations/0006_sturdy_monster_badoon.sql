@@ -1,0 +1,1 @@
+ALTER TABLE "items" ADD COLUMN "password_hash" text;

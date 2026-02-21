@@ -20,14 +20,27 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <div className={cn("flex items-start justify-between gap-4", className)}>
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+    <div
+      className={cn(
+        "flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between",
+        className,
+      )}
+    >
+      <div className="space-y-1.5">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          {title}
+        </h1>
         {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <p className="text-base text-muted-foreground/80 max-w-[600px] leading-relaxed">
+            {description}
+          </p>
         )}
       </div>
-      {children && <div className="flex items-center gap-2">{children}</div>}
+      {children && (
+        <div className="flex w-full sm:w-auto items-center gap-3">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
@@ -49,14 +62,27 @@ export function SectionHeader({
   className,
 }: SectionHeaderProps) {
   return (
-    <div className={cn("flex items-start justify-between gap-4", className)}>
-      <div className="space-y-0.5">
-        <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+    <div
+      className={cn(
+        "flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b pb-4 mb-6",
+        className,
+      )}
+    >
+      <div className="space-y-1">
+        <h2 className="text-xl font-semibold tracking-tight text-foreground">
+          {title}
+        </h2>
         {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <p className="text-sm text-muted-foreground/80 leading-relaxed">
+            {description}
+          </p>
         )}
       </div>
-      {children && <div className="flex items-center gap-2">{children}</div>}
+      {children && (
+        <div className="flex w-full sm:w-auto items-center gap-2 mt-2 sm:mt-0">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
@@ -82,26 +108,41 @@ export function MetricCard({
   className,
 }: MetricCardProps) {
   return (
-    <div className={cn("rounded-lg border bg-card p-6 shadow-sm", className)}>
-      <div className="flex items-center justify-between">
+    <div
+      className={cn(
+        "group relative overflow-hidden rounded-2xl border bg-card p-6 shadow-sm transition-all hover:shadow-md",
+        className,
+      )}
+    >
+      <div className="flex items-center justify-between relative z-10">
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        {icon && <div className="text-muted-foreground">{icon}</div>}
-      </div>
-      <div className="mt-2 flex items-baseline gap-2">
-        <p className="text-3xl font-semibold tabular-nums">{value}</p>
-        {change && (
-          <span
-            className={cn(
-              "text-xs font-medium",
-              trend === "up" && "text-green-600",
-              trend === "down" && "text-red-600",
-              trend === "neutral" && "text-muted-foreground",
-            )}
-          >
-            {change}
-          </span>
+        {icon && (
+          <div className="p-2 bg-primary/5 text-primary rounded-xl group-hover:bg-primary/10 transition-colors">
+            {icon}
+          </div>
         )}
       </div>
+      <div className="mt-4 flex flex-col gap-1 relative z-10">
+        <p className="text-4xl font-semibold tracking-tight text-foreground tabular-nums">
+          {value}
+        </p>
+        {change && (
+          <div className="flex items-center gap-1.5 mt-1">
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+                trend === "up" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+                trend === "down" && "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+                trend === "neutral" && "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400",
+              )}
+            >
+              {change}
+            </span>
+          </div>
+        )}
+      </div>
+      {/* Decorative gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-primary/[0.02] pointer-events-none" />
     </div>
   );
 }

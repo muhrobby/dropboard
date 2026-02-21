@@ -165,7 +165,7 @@ describe("acceptInvite", () => {
       role: "member",
     });
 
-    const membership = await acceptInvite(invite.token, invitee.id);
+    const membership = await acceptInvite(invite.token, invitee.id, invitee.email);
     expect(membership).toBeDefined();
     expect(membership?.userId).toBe(invitee.id);
     expect(membership?.workspaceId).toBe(acceptWs.id);
@@ -189,7 +189,7 @@ describe("acceptInvite", () => {
       role: "member",
     });
 
-    await expect(acceptInvite(invite.token, invitee.id)).rejects.toThrow(
+    await expect(acceptInvite(invite.token, invitee.id, invitee.email)).rejects.toThrow(
       ValidationError
     );
   });

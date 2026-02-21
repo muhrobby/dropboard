@@ -212,7 +212,13 @@ export function DropCard({ item }: DropCardProps) {
 
   function handleDownload() {
     if (fileAsset?.downloadUrl) {
-      window.open(fileAsset.downloadUrl, "_blank");
+      const a = document.createElement("a");
+      a.href = fileAsset.downloadUrl;
+      a.download = fileAsset.originalName || item.title || "download";
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
   }
 

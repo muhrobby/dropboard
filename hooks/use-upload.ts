@@ -11,6 +11,9 @@ type UploadParams = {
   note?: string;
   tags?: string[];
   isPinned?: boolean;
+  retentionDays?: number;
+  maxDownloads?: number;
+  password?: string;
 };
 
 type UploadMultipleParams = {
@@ -20,6 +23,9 @@ type UploadMultipleParams = {
   note?: string;
   tags?: string[];
   isPinned?: boolean;
+  retentionDays?: number;
+  maxDownloads?: number;
+  password?: string;
 };
 
 type UploadState = {
@@ -37,6 +43,9 @@ async function uploadFile(params: UploadParams): Promise<ItemResponse> {
     formData.append("tags", JSON.stringify(params.tags));
   }
   if (params.isPinned) formData.append("isPinned", "true");
+  if (params.retentionDays) formData.append("retentionDays", params.retentionDays.toString());
+  if (params.maxDownloads) formData.append("maxDownloads", params.maxDownloads.toString());
+  if (params.password) formData.append("password", params.password);
 
   const res = await fetch("/api/v1/files/upload", {
     method: "POST",
@@ -72,6 +81,9 @@ async function uploadMultipleFiles(params: UploadMultipleParams): Promise<ItemRe
       formData.append("tags", JSON.stringify(params.tags));
     }
     if (params.isPinned) formData.append("isPinned", "true");
+    if (params.retentionDays) formData.append("retentionDays", params.retentionDays.toString());
+    if (params.maxDownloads) formData.append("maxDownloads", params.maxDownloads.toString());
+    if (params.password) formData.append("password", params.password);
 
     const res = await fetch("/api/v1/files/upload", {
       method: "POST",

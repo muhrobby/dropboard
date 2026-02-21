@@ -15,10 +15,12 @@ export async function GET(
     // Record access
     await recordShareAccess(share.id);
 
-    // Generate signed URL for file if it's a drop
+    const isProtected = !!item.passwordHash;
+
+    // Generate signed URL for file if it's a drop and NOT protected
     let fileAssetWithUrl = null;
     if (fileAsset) {
-      const downloadUrl = buildSignedUrl(fileAsset.id);
+      const downloadUrl = isProtected ? null : buildSignedUrl(fileAsset.id);
       fileAssetWithUrl = {
         id: fileAsset.id,
         originalName: fileAsset.originalName,
@@ -42,9 +44,10 @@ export async function GET(
           id: item.id,
           type: item.type,
           title: item.title,
-          content: item.content,
-          note: item.note,
+          content: isProtected ? null : item.content,
+          note: isProtected ? null : item.note,
           tags: item.tags,
+          isProtected,
           createdAt: item.createdAt,
         },
         fileAsset: fileAssetWithUrl,

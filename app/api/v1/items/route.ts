@@ -19,6 +19,7 @@ import {
 } from "@/lib/validations/item";
 import { fetchLinkTitle } from "@/lib/link-title";
 import { AppError, ForbiddenError } from "@/lib/errors";
+import bcrypt from "bcrypt";
 
 export async function GET(request: NextRequest) {
   try {
@@ -93,6 +94,11 @@ export async function POST(request: NextRequest) {
       const title =
         result.data.title || (await fetchLinkTitle(result.data.content));
 
+      let passwordHash: string | null = null;
+      if (result.data.password) {
+        passwordHash = await bcrypt.hash(result.data.password, 10);
+      }
+
       const item = await createItem({
         workspaceId,
         createdBy: session.user.id,
@@ -100,8 +106,11 @@ export async function POST(request: NextRequest) {
         title,
         content: result.data.content,
         note: result.data.note,
+        passwordHash,
         tags: result.data.tags,
         isPinned: true,
+        retentionDays: result.data.retentionDays,
+        maxDownloads: result.data.maxDownloads,
       });
 
       return createdResponse(item);
@@ -116,14 +125,22 @@ export async function POST(request: NextRequest) {
         return validationErrorResponse(message);
       }
 
+      let passwordHash: string | null = null;
+      if (result.data.password) {
+        passwordHash = await bcrypt.hash(result.data.password, 10);
+      }
+
       const item = await createItem({
         workspaceId,
         createdBy: session.user.id,
         type: "note",
         title: result.data.title,
         content: result.data.content,
+        passwordHash,
         tags: result.data.tags,
         isPinned: true,
+        retentionDays: result.data.retentionDays,
+        maxDownloads: result.data.maxDownloads,
       });
 
       return createdResponse(item);

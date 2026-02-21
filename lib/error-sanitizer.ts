@@ -121,7 +121,7 @@ export function sanitizeErrorForResponse(
   const err = error as Partial<Pick<Error, "message" | "name">> & Record<string, unknown>;
 
   // Get error code if available
-  let code = (err.code as string | undefined) || err.name || "INTERNAL_ERROR";
+  const code = (err.code as string | undefined) || err.name || "INTERNAL_ERROR";
 
   // Sanitize message
   let message = err.message || String(error);

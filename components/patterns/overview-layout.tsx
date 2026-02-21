@@ -20,7 +20,16 @@ interface OverviewLayoutProps {
  * Mobile: Single column, metrics 2x2
  */
 export function OverviewLayout({ children, className }: OverviewLayoutProps) {
-  return <div className={cn("space-y-8", className)}>{children}</div>;
+  return (
+    <div
+      className={cn(
+        "space-y-10 sm:space-y-12 animate-in fade-in duration-500",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 
 interface OverviewMetricsProps {
@@ -33,7 +42,12 @@ interface OverviewMetricsProps {
  */
 export function OverviewMetrics({ children, className }: OverviewMetricsProps) {
   return (
-    <div className={cn("grid gap-4 grid-cols-2 lg:grid-cols-4", className)}>
+    <div
+      className={cn(
+        "grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4",
+        className,
+      )}
+    >
       {children}
     </div>
   );

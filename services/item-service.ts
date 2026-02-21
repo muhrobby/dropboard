@@ -8,6 +8,26 @@ import { deleteFile } from "@/lib/file-storage";
 import { buildSignedUrl } from "@/lib/file-storage";
 import type { ItemType } from "@/types";
 import { logActivity } from "./activity-service";
+import { getUserTierLimits } from "@/lib/tier-guard";
+
+function formatItemSecurely(row: { item: typeof items.$inferSelect; fileAsset: typeof fileAssets.$inferSelect | null }) {
+  const isProtected = !!row.item.passwordHash;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { passwordHash, ...safeItem } = row.item;
+
+  return {
+    ...safeItem,
+    content: isProtected ? null : safeItem.content,
+    note: isProtected ? null : safeItem.note,
+    isProtected,
+    fileAsset: row.fileAsset
+      ? {
+          ...row.fileAsset,
+          downloadUrl: isProtected ? null : buildSignedUrl(row.fileAsset.id),
+        }
+      : null,
+  };
+}
 
 async function countPinnedItems(workspaceId: string): Promise<number> {
   const result = await db
@@ -24,8 +44,11 @@ type CreateItemData = {
   title: string;
   content?: string | null;
   note?: string | null;
+  passwordHash?: string | null;
   tags?: string[];
   isPinned?: boolean;
+  retentionDays?: number;
+  maxDownloads?: number;
   fileAssetId?: string | null;
 };
 
@@ -40,11 +63,11 @@ type ListItemsFilters = {
 export async function createItem(data: CreateItemData) {
   const id = ulid();
 
-  // Retention logic: drops default to temporary (7 days), links/notes are always permanent
+  const limits = await getUserTierLimits(data.createdBy);
+
   let expiresAt: Date | null = null;
   let isPinned = data.isPinned ?? false;
 
-  // Check pinned quota for items that will be pinned
   const willBePinned = isPinned || data.type === "link" || data.type === "note";
   if (willBePinned) {
     const pinnedCount = await countPinnedItems(data.workspaceId);
@@ -55,13 +78,22 @@ export async function createItem(data: CreateItemData) {
     }
   }
 
-  if (data.type === "drop" && !isPinned) {
+  if (data.retentionDays !== undefined) {
+    if (limits.retentionDays !== -1 && data.retentionDays > limits.retentionDays) {
+      throw new QuotaExceededError(`Maximum retention days for your tier is ${limits.retentionDays}`);
+    }
     expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + DEFAULT_RETENTION_DAYS);
+    expiresAt.setDate(expiresAt.getDate() + data.retentionDays);
+  } else if (data.type === "drop" && !isPinned) {
+    expiresAt = new Date();
+    const defaultRetention = limits.retentionDays !== -1 ? limits.retentionDays : DEFAULT_RETENTION_DAYS;
+    expiresAt.setDate(expiresAt.getDate() + defaultRetention);
   } else if (data.type === "link" || data.type === "note") {
     isPinned = true;
     expiresAt = null;
   }
+
+  const maxDownloads = data.maxDownloads ?? null;
 
   const now = new Date();
   await db.insert(items).values({
@@ -72,9 +104,11 @@ export async function createItem(data: CreateItemData) {
     title: data.title,
     content: data.content ?? null,
     note: data.note ?? null,
+    passwordHash: data.passwordHash ?? null,
     tags: data.tags ?? [],
     isPinned,
     expiresAt,
+    maxDownloads,
     fileAssetId: data.fileAssetId ?? null,
     createdAt: now,
     updatedAt: now,
@@ -132,18 +166,10 @@ export async function listItems(filters: ListItemsFilters) {
 
   const total = countResult[0]?.count ?? 0;
 
-  const itemsWithUrls = data.map((row) => ({
-    ...row.item,
-    fileAsset: row.fileAsset
-      ? {
-          ...row.fileAsset,
-          downloadUrl: buildSignedUrl(row.fileAsset.id),
-        }
-      : null,
-  }));
+  const safeItems = data.map(formatItemSecurely);
 
   return {
-    data: itemsWithUrls,
+    data: safeItems,
     meta: {
       page: filters.page,
       limit: filters.limit,
@@ -152,7 +178,7 @@ export async function listItems(filters: ListItemsFilters) {
   };
 }
 
-export async function getItem(id: string) {
+export async function getRawItem(id: string) {
   const result = await db
     .select({
       item: items,
@@ -177,6 +203,24 @@ export async function getItem(id: string) {
         }
       : null,
   };
+}
+
+export async function getItem(id: string) {
+  const result = await db
+    .select({
+      item: items,
+      fileAsset: fileAssets,
+    })
+    .from(items)
+    .leftJoin(fileAssets, eq(items.fileAssetId, fileAssets.id))
+    .where(eq(items.id, id))
+    .limit(1);
+
+  if (result.length === 0) {
+    throw new NotFoundError("Item not found");
+  }
+
+  return formatItemSecurely(result[0]);
 }
 
 export async function updateItem(
@@ -295,18 +339,10 @@ export async function listTrashItems(filters: {
 
   const total = countResult[0]?.count ?? 0;
 
-  const itemsWithUrls = data.map((row) => ({
-    ...row.item,
-    fileAsset: row.fileAsset
-      ? {
-          ...row.fileAsset,
-          downloadUrl: buildSignedUrl(row.fileAsset.id),
-        }
-      : null,
-  }));
+  const safeItems = data.map(formatItemSecurely);
 
   return {
-    data: itemsWithUrls,
+    data: safeItems,
     meta: {
       page: filters.page,
       limit: filters.limit,

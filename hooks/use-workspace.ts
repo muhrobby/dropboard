@@ -4,12 +4,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useWorkspaceStore } from "@/stores/workspace-store";
 import { useEffect } from "react";
 import type { ApiResponse, WorkspaceResponse } from "@/types/api";
+import { useSession } from "@/lib/auth-client";
 
 async function fetchWorkspaces(): Promise<WorkspaceResponse[]> {
   try {
     const res = await fetch("/api/v1/workspaces");
 
     if (!res.ok) {
+      if (res.status === 401) {
+        throw new Error("Unauthorized");
+      }
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
 
@@ -43,10 +47,17 @@ async function createWorkspace(name: string): Promise<WorkspaceResponse> {
 
 export function useWorkspaces() {
   const setWorkspaces = useWorkspaceStore((s) => s.setWorkspaces);
+  const { data: session } = useSession();
 
   const query = useQuery({
     queryKey: ["workspaces"],
     queryFn: fetchWorkspaces,
+    enabled: !!session?.user, // Only fetch if user is authenticated
+    retry: (failureCount, error) => {
+      // Don't retry on 401 Unauthorized
+      if (error.message === "Unauthorized") return false;
+      return failureCount < 3;
+    }
   });
 
   useEffect(() => {

@@ -1,0 +1,39 @@
+  103:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  79:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  80:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   52:5   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   62:20  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+   91:5   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  101:20  error  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  40:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  21:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   73:24  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+   92:24  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  105:24  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  190:32  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  197:66  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  216:30  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  229:52  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  229:56  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  83:54  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  51:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  55:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  117:12  warning  'error' is defined but never used       @typescript-eslint/no-unused-vars
+  134:12  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  111:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  88:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  188:10  error  Parsing error: Expected corresponding JSX closing tag for 'a'
+   17:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   28:61  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   62:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  139:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  166:19  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                        react/no-unescaped-entities
+  166:31  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                        react/no-unescaped-entities
+   84:5   error    Compilation Skipped: Existing memoization could not be preserved
+  48:28  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1:12  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  177:65  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  223:65  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  91:54  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  65:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+✖ 208 problems (35 errors, 173 warnings)

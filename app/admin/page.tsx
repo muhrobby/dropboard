@@ -7,11 +7,13 @@ import {
     CreditCard,
     DollarSign,
     HardDrive,
-    Loader2
+    Loader2,
+    TrendingUp
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { formatBytes } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format, parseISO } from "date-fns";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
 
 export default function AdminDashboardPage() {
     const { data, isLoading } = useQuery({
@@ -33,10 +35,20 @@ export default function AdminDashboardPage() {
         );
     }
 
-    const { revenue, users, storage, activeSubscriptions, recentOrders } = data || {};
+    const { revenue, users, storage, activeSubscriptions, recentOrders, dailyRevenue, dailyUsers } = data || {};
+
+    const formattedDailyRevenue = dailyRevenue?.map((d: { date: string; amount: number }) => ({
+        ...d,
+        displayDate: format(parseISO(d.date), "MMM dd")
+    })) || [];
+
+    const formattedDailyUsers = dailyUsers?.map((d: { date: string; count: number }) => ({
+        ...d,
+        displayDate: format(parseISO(d.date), "MMM dd")
+    })) || [];
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <PageHeader
                 title="Admin Dashboard"
                 description="Overview of system performance and business metrics."
@@ -99,22 +111,66 @@ export default function AdminDashboardPage() {
 
             {/* Recent Activity */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4">
+                <Card className="col-span-4 flex flex-col">
                     <CardHeader>
-                        <CardTitle>Recent Revenue</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                            <TrendingUp className="h-5 w-5 text-indigo-500" />
+                            Revenue (Last 7 Days)
+                        </CardTitle>
                     </CardHeader>
-                    <CardContent className="pl-2">
-                        <div className="h-[200px] flex items-center justify-center text-muted-foreground bg-muted/10 rounded-md border border-dashed">
-                            Revenue Chart (Requires daily aggregation job)
-                        </div>
+                    <CardContent className="flex-1 min-h-[300px]">
+                        {formattedDailyRevenue.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={formattedDailyRevenue} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted/30" />
+                                    <XAxis 
+                                        dataKey="displayDate" 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                        tick={{ fontSize: 12 }} 
+                                        className="text-muted-foreground fill-muted-foreground"
+                                    />
+                                    <YAxis 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                        tick={{ fontSize: 12 }}
+                                        tickFormatter={(value) => `Rp${(value/1000).toFixed(0)}k`}
+                                        className="text-muted-foreground fill-muted-foreground"
+                                    />
+                                    <Tooltip 
+                                        contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--background)' }}
+                                        formatter={(value: number | undefined) => [`Rp ${(value || 0).toLocaleString('id-ID')}`, 'Revenue']}
+                                        labelStyle={{ color: 'var(--foreground)', fontWeight: 600, marginBottom: '4px' }}
+                                    />
+                                    <Area 
+                                        type="monotone" 
+                                        dataKey="amount" 
+                                        stroke="#6366f1" 
+                                        strokeWidth={2}
+                                        fillOpacity={1} 
+                                        fill="url(#colorRevenue)" 
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="h-full w-full flex items-center justify-center text-muted-foreground bg-muted/10 rounded-md border border-dashed">
+                                No revenue data for the past 7 days
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
-                <Card className="col-span-3">
+                <Card className="col-span-3 flex flex-col">
                     <CardHeader>
                         <CardTitle>Recent Orders</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="flex-1">
                         <div className="space-y-4">
                             {recentOrders?.map((order: { 
                                 id: string; 
