@@ -6,7 +6,7 @@ describe("useTodoStore", () => {
     useTodoStore.setState({ columns: [], tasks: [] });
   });
 
-  const sampleColumn: TodoColumn = { id: "col1", workspaceId: "ws1", title: "To Do", order: 0 };
+  const sampleColumn: TodoColumn = { id: "col1", workspaceId: "ws1", title: "To Do", order: 0, wipLimit: null };
   const sampleTask: TodoTask = { 
     id: "task1", 
     workspaceId: "ws1", 
@@ -15,7 +15,11 @@ describe("useTodoStore", () => {
     description: "Desc", 
     order: 0, 
     assignedTo: null, 
-    dueDate: null 
+    dueDate: null,
+    priority: "medium",
+    labels: [],
+    attachments: [],
+    subtasks: []
   };
 
   it("should add a column", () => {
@@ -52,7 +56,7 @@ describe("useTodoStore", () => {
   });
 
   it("should optimally move a task to a different column", () => {
-    const col2: TodoColumn = { id: "col2", workspaceId: "ws1", title: "Done", order: 1 };
+    const col2: TodoColumn = { id: "col2", workspaceId: "ws1", title: "Done", order: 1, wipLimit: null };
     useTodoStore.setState({
       columns: [sampleColumn, col2],
       tasks: [

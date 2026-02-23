@@ -11,23 +11,7 @@ import { wallets, walletTransactions } from "./wallets";
 import { subscriptions, paymentGatewayConfig } from "./subscriptions";
 import { topupOrders } from "./topup-orders";
 import { pricingTiers } from "./pricing-tiers";
-import { todoColumns, todoTasks } from "./todos";
-
-export const usersRelations = relations(users, ({ many, one }) => ({
-  sessions: many(sessions),
-  accounts: many(accounts),
-  workspaceMembers: many(workspaceMembers),
-  createdItems: many(items, { relationName: "creator" }),
-  uploadedFileAssets: many(fileAssets, { relationName: "uploader" }),
-  sentInvites: many(invites, { relationName: "inviter" }),
-  activities: many(activityLogs, { relationName: "actor" }),
-  webhooks: many(webhooks, { relationName: "webhookCreator" }),
-  wallet: one(wallets),
-  subscription: one(subscriptions),
-  topupOrders: many(topupOrders),
-  createdTasks: many(todoTasks, { relationName: "taskCreator" }),
-  assignedTasks: many(todoTasks, { relationName: "taskAssignee" }),
-}));
+import { todoColumns, todoTasks, todoTaskComments } from "./todos";
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
   user: one(users, {
@@ -192,7 +176,7 @@ export const todoColumnsRelations = relations(todoColumns, ({ one, many }) => ({
   tasks: many(todoTasks),
 }));
 
-export const todoTasksRelations = relations(todoTasks, ({ one }) => ({
+export const todoTasksRelations = relations(todoTasks, ({ one, many }) => ({
   workspace: one(workspaces, {
     fields: [todoTasks.workspaceId],
     references: [workspaces.id],
@@ -211,4 +195,38 @@ export const todoTasksRelations = relations(todoTasks, ({ one }) => ({
     references: [users.id],
     relationName: "taskAssignee",
   }),
+  comments: many(todoTaskComments),
+}));
+
+export const todoTaskCommentsRelations = relations(todoTaskComments, ({ one }) => ({
+  task: one(todoTasks, {
+    fields: [todoTaskComments.taskId],
+    references: [todoTasks.id],
+  }),
+  workspace: one(workspaces, {
+    fields: [todoTaskComments.workspaceId],
+    references: [workspaces.id],
+  }),
+  author: one(users, {
+    fields: [todoTaskComments.authorId],
+    references: [users.id],
+    relationName: "commentAuthor",
+  }),
+}));
+
+export const usersRelations = relations(users, ({ many, one }) => ({
+  sessions: many(sessions),
+  accounts: many(accounts),
+  workspaceMembers: many(workspaceMembers),
+  createdItems: many(items, { relationName: "creator" }),
+  uploadedFileAssets: many(fileAssets, { relationName: "uploader" }),
+  sentInvites: many(invites, { relationName: "inviter" }),
+  activities: many(activityLogs, { relationName: "actor" }),
+  webhooks: many(webhooks, { relationName: "webhookCreator" }),
+  wallet: one(wallets),
+  subscription: one(subscriptions),
+  topupOrders: many(topupOrders),
+  createdTasks: many(todoTasks, { relationName: "taskCreator" }),
+  assignedTasks: many(todoTasks, { relationName: "taskAssignee" }),
+  todoComments: many(todoTaskComments, { relationName: "commentAuthor" }),
 }));

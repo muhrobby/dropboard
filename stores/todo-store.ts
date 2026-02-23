@@ -5,6 +5,7 @@ export interface TodoColumn {
   workspaceId: string;
   title: string;
   order: number;
+  wipLimit: number | null;
 }
 
 export interface TodoTask {
@@ -16,6 +17,10 @@ export interface TodoTask {
   order: number;
   assignedTo: string | null;
   dueDate: Date | null;
+  priority: string;
+  labels: string[];
+  attachments: { id: string; name: string; url: string; size: number; mimeType?: string; isCover?: boolean }[];
+  subtasks: { id: string; title: string; completed: boolean }[];
 }
 
 interface TodoState {
@@ -23,7 +28,7 @@ interface TodoState {
   tasks: TodoTask[];
   setBoard: (columns: TodoColumn[], tasks: TodoTask[]) => void;
   addColumn: (column: TodoColumn) => void;
-  updateColumn: (id: string, title: string) => void;
+  updateColumn: (id: string, updates: Partial<TodoColumn>) => void;
   deleteColumn: (id: string) => void;
   addTask: (task: TodoTask) => void;
   updateTask: (id: string, updates: Partial<TodoTask>) => void;
@@ -39,9 +44,9 @@ export const useTodoStore = create<TodoState>((set) => ({
 
   addColumn: (column) => set((state) => ({ columns: [...state.columns, column] })),
 
-  updateColumn: (id, title) =>
+  updateColumn: (id, updates) =>
     set((state) => ({
-      columns: state.columns.map((c) => (c.id === id ? { ...c, title } : c)),
+      columns: state.columns.map((c) => (c.id === id ? { ...c, ...updates } : c)),
     })),
 
   deleteColumn: (id) =>

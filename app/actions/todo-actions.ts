@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { todoColumns, todoTasks, workspaceMembers } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { todoColumns, todoTasks, todoTaskComments, workspaceMembers } from "@/db/schema";
+import { eq, and, desc } from "drizzle-orm";
 import { requireAuth } from "@/middleware/auth-guard";
 import { z } from "zod";
 
@@ -16,7 +16,8 @@ const createColumnSchema = z.object({
 const updateColumnSchema = z.object({
   id: z.string(),
   workspaceId: z.string(),
-  title: z.string().min(1).max(100),
+  title: z.string().min(1).max(100).optional(),
+  wipLimit: z.number().int().min(1).nullable().optional(),
 });
 
 const createTaskSchema = z.object({
@@ -30,7 +31,24 @@ const updateTaskSchema = z.object({
   id: z.string(),
   workspaceId: z.string(),
   title: z.string().min(1).max(255).optional(),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
+  dueDate: z.date().nullable().optional(),
+  assignedTo: z.string().nullable().optional(),
+  priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+  labels: z.array(z.string()).optional(),
+  attachments: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    url: z.string(),
+    size: z.number(),
+    mimeType: z.string().optional(),
+    isCover: z.boolean().optional(),
+  })).optional(),
+  subtasks: z.array(z.object({
+    id: z.string(),
+    title: z.string(),
+    completed: z.boolean(),
+  })).optional(),
 });
 
 const moveTaskSchema = z.object({
@@ -111,7 +129,11 @@ export async function updateColumn(input: z.infer<typeof updateColumnSchema>) {
 
     const [column] = await db
       .update(todoColumns)
-      .set({ title: data.title, updatedAt: new Date() })
+      .set({
+        ...(data.title !== undefined && { title: data.title }),
+        ...(data.wipLimit !== undefined && { wipLimit: data.wipLimit }),
+        updatedAt: new Date(),
+      })
       .where(and(eq(todoColumns.id, data.id), eq(todoColumns.workspaceId, data.workspaceId)))
       .returning();
 
@@ -180,6 +202,12 @@ export async function updateTask(input: z.infer<typeof updateTaskSchema>) {
       .set({
         ...(data.title !== undefined && { title: data.title }),
         ...(data.description !== undefined && { description: data.description }),
+        ...(data.dueDate !== undefined && { dueDate: data.dueDate }),
+        ...(data.assignedTo !== undefined && { assignedTo: data.assignedTo }),
+        ...(data.priority !== undefined && { priority: data.priority }),
+        ...(data.labels !== undefined && { labels: data.labels }),
+        ...(data.attachments !== undefined && { attachments: data.attachments }),
+        ...(data.subtasks !== undefined && { subtasks: data.subtasks }),
         updatedAt: new Date(),
       })
       .where(and(eq(todoTasks.id, data.id), eq(todoTasks.workspaceId, data.workspaceId)))
@@ -279,6 +307,117 @@ export async function moveTask(input: z.infer<typeof moveTaskSchema>) {
     return { success: true };
   } catch (error) {
     console.error("Failed to move task:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
+// ── Comment schemas ──────────────────────────────────────────────────────────
+
+const createCommentSchema = z.object({
+  taskId: z.string(),
+  workspaceId: z.string(),
+  body: z.string().min(1).max(2000),
+});
+
+const deleteCommentSchema = z.object({
+  commentId: z.string(),
+  workspaceId: z.string(),
+});
+
+// ── Comment response type ────────────────────────────────────────────────────
+
+export type CommentWithAuthor = {
+  id: string;
+  taskId: string;
+  workspaceId: string;
+  authorId: string;
+  body: string;
+  createdAt: Date;
+  updatedAt: Date;
+  author: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  } | null;
+};
+
+// ── Comment actions ──────────────────────────────────────────────────────────
+
+export async function getTaskComments(taskId: string, workspaceId: string): Promise<{ success: boolean; comments?: CommentWithAuthor[]; error?: string }> {
+  try {
+    const session = await requireAuth();
+    await verifyWorkspaceAccess(workspaceId, session.user.id);
+
+    const rows = await db.query.todoTaskComments.findMany({
+      where: and(
+        eq(todoTaskComments.taskId, taskId),
+        eq(todoTaskComments.workspaceId, workspaceId),
+      ),
+      orderBy: [desc(todoTaskComments.createdAt)],
+      with: {
+        author: {
+          columns: { id: true, name: true, image: true },
+        },
+      },
+    });
+
+    return { success: true, comments: rows as CommentWithAuthor[] };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
+export async function createComment(input: z.infer<typeof createCommentSchema>) {
+  try {
+    const session = await requireAuth();
+    const data = createCommentSchema.parse(input);
+    await verifyWorkspaceAccess(data.workspaceId, session.user.id);
+
+    const [comment] = await db
+      .insert(todoTaskComments)
+      .values({
+        taskId: data.taskId,
+        workspaceId: data.workspaceId,
+        authorId: session.user.id,
+        body: data.body,
+      })
+      .returning();
+
+    // Re-fetch with author join so the UI can render immediately
+    const full = await db.query.todoTaskComments.findFirst({
+      where: eq(todoTaskComments.id, comment.id),
+      with: {
+        author: {
+          columns: { id: true, name: true, image: true },
+        },
+      },
+    });
+
+    return { success: true, comment: full as CommentWithAuthor };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
+export async function deleteComment(input: z.infer<typeof deleteCommentSchema>) {
+  try {
+    const session = await requireAuth();
+    const data = deleteCommentSchema.parse(input);
+    await verifyWorkspaceAccess(data.workspaceId, session.user.id);
+
+    // Only the author can delete their own comment
+    await db
+      .delete(todoTaskComments)
+      .where(
+        and(
+          eq(todoTaskComments.id, data.commentId),
+          eq(todoTaskComments.workspaceId, data.workspaceId),
+          eq(todoTaskComments.authorId, session.user.id),
+        )
+      );
+
+    return { success: true };
+  } catch (error) {
     return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }

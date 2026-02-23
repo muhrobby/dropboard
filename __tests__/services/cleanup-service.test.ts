@@ -50,7 +50,6 @@ describe("Cleanup Service (Two-Phase Commit)", () => {
 
     // Setup the mock to return one item
     const mockWhere = vi.fn().mockResolvedValue(mockExpiredItems);
-    // @ts-expect-error mock data type is incomplete
     db.select = vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
         leftJoin: vi.fn().mockReturnValue({
@@ -89,7 +88,6 @@ describe("Cleanup Service (Two-Phase Commit)", () => {
     ];
 
     const mockWhere = vi.fn().mockResolvedValue(mockExpiredItems);
-    // @ts-expect-error mock data type is incomplete
     db.select = vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
         leftJoin: vi.fn().mockReturnValue({
