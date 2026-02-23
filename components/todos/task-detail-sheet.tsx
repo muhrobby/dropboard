@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, User, AlignLeft, Layout, Tag, X, CheckSquare, Paperclip, Plus, Trash, Eye, Pencil, MessageSquare, Send, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -67,20 +67,22 @@ export function TaskDetailSheet({ task, open, onOpenChange, workspaceId }: TaskD
   const [commentBody, setCommentBody] = useState("");
   const [isSendingComment, setIsSendingComment] = useState(false);
 
+  // Reset local state and reload comments only when the *task ID* changes (not on every
+  // reference update from the store, which would cause an infinite loop).
+  const taskId = task?.id;
   useEffect(() => {
-    if (task) {
-      setTitle(task.title || "");
-      setDescription(task.description || "");
-      setComments([]);
-      setCommentBody("");
-      // Load comments
-      getTaskComments(task.id, workspaceId).then((res) => {
-        if (res.success && res.comments) {
-          setComments(res.comments);
-        }
-      });
-    }
-  }, [task, workspaceId]);
+    if (!taskId) return;
+    setTitle(task!.title || "");
+    setDescription(task!.description || "");
+    setComments([]);
+    setCommentBody("");
+    getTaskComments(taskId, workspaceId).then((res) => {
+      if (res.success && res.comments) {
+        setComments(res.comments);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId, workspaceId]); // intentionally exclude `task` object — only re-run on id change
 
   // Fetch workspace members for assignee dropdown
   const { data: membersResponse } = useQuery({
@@ -94,6 +96,33 @@ export function TaskDetailSheet({ task, open, onOpenChange, workspaceId }: TaskD
   });
 
   const members = membersResponse?.data || [];
+
+  // Stabilize AttachmentBrowser props to avoid new references every render.
+  const existingAttachmentIds = useMemo(
+    () => task?.attachments?.map((a) => a.id) ?? [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [task?.attachments]
+  );
+  const handleAttach = useCallback(
+    (newItems: Parameters<React.ComponentProps<typeof AttachmentBrowser>["onAttach"]>[0]) => {
+      if (!task) return;
+      const newAttachments = newItems.map((item) => ({
+        id: item.id,
+        name: item.title,
+        url: item.fileAsset?.downloadUrl || "",
+        size: item.fileAsset?.sizeBytes || 0,
+        mimeType: item.fileAsset?.mimeType || "application/octet-stream",
+      }));
+      const merged = [...(task.attachments || []), ...newAttachments];
+      // Inline save to avoid referencing handleSave before it is defined
+      updateTaskState(task.id, { attachments: merged });
+      updateTask({ id: task.id, workspaceId, attachments: merged } as Parameters<typeof updateTask>[0]).then((res) => {
+        if (!res.success) toast.error("Failed to add attachments");
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [task?.attachments, task?.id, workspaceId]
+  );
 
   if (!task) return null;
 
@@ -608,17 +637,8 @@ export function TaskDetailSheet({ task, open, onOpenChange, workspaceId }: TaskD
       <AttachmentBrowser 
         open={isAttachmentBrowserOpen}
         onOpenChange={setIsAttachmentBrowserOpen}
-        existingAttachmentIds={task.attachments?.map((a) => a.id) || []}
-        onAttach={(newItems) => {
-          const newAttachments = newItems.map((item) => ({
-            id: item.id,
-            name: item.title,
-            url: item.fileAsset?.downloadUrl || "",
-            size: item.fileAsset?.sizeBytes || 0,
-            mimeType: item.fileAsset?.mimeType || "application/octet-stream",
-          }));
-          handleSave({ attachments: [...(task.attachments || []), ...newAttachments] });
-        }}
+        existingAttachmentIds={existingAttachmentIds}
+        onAttach={handleAttach}
       />
     </Sheet>
   );
