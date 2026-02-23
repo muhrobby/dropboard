@@ -61,8 +61,8 @@ export function AppSidebar() {
     userData?.data?.role === "admin" || userData?.data?.role === "super_admin";
 
   return (
-    <aside className="hidden md:flex md:w-72 md:flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/50 backdrop-blur-xl z-20 transition-all duration-300">
-      <div className="flex h-16 items-center px-6 border-b border-transparent">
+    <aside className="hidden md:flex md:w-72 md:flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/50 backdrop-blur-xl z-20 transition-all duration-300 h-full overflow-hidden">
+      <div className="flex h-16 items-center px-6 border-b border-transparent shrink-0">
         <Link
           href="/dashboard"
           className="flex items-center gap-2 text-xl font-bold tracking-tight hover:opacity-80 transition-opacity"
@@ -74,11 +74,11 @@ export function AppSidebar() {
         </Link>
       </div>
 
-      <div className="px-4 py-4">
+      <div className="px-4 py-4 shrink-0">
         <WorkspaceSwitcher />
       </div>
 
-      <ScrollArea className="flex-1 px-4 pb-6">
+      <ScrollArea className="flex-1 px-4 pb-6 min-h-0">
         <div className="space-y-6">
           <nav className="space-y-1">
             <p className="px-3 mb-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">

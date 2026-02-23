@@ -19,6 +19,14 @@ import { moveTask, createColumn } from "@/app/actions/todo-actions";
 import { Column } from "./column";
 import { TaskCard } from "./task-card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,6 +38,10 @@ export function Board({ workspaceId }: BoardProps) {
   const { columns, tasks, moveTaskOptimistic, addColumn } = useTodoStore();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
+  const [originalTask, setOriginalTask] = useState<{ columnId: string; order: number } | null>(null);
+
+  const [isAddingColumn, setIsAddingColumn] = useState(false);
+  const [newColumnTitle, setNewColumnTitle] = useState("");
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -42,6 +54,10 @@ export function Board({ workspaceId }: BoardProps) {
 
     if (type === "Task") {
       setActiveId(active.id as string);
+      const task = tasks.find((t) => t.id === active.id);
+      if (task) {
+        setOriginalTask({ columnId: task.columnId, order: task.order });
+      }
     }
     if (type === "Column") {
       setActiveColumnId(active.id as string);
@@ -115,10 +131,15 @@ export function Board({ workspaceId }: BoardProps) {
         }
       } else if (isOverColumn) {
         newColumnId = overId;
-        newOrder = tasks.filter((t) => t.columnId === overId).length;
+        const targetTasks = tasks.filter((t) => t.columnId === overId);
+        // If handleDragOver already moved it here, its length includes it
+        newOrder = Math.max(0, targetTasks.length - 1);
       }
 
-      if (activeTask.columnId !== newColumnId || activeTask.order !== newOrder) {
+      if (
+        originalTask &&
+        (originalTask.columnId !== newColumnId || originalTask.order !== newOrder)
+      ) {
         moveTaskOptimistic(activeId, newColumnId, newOrder);
         try {
           const res = await moveTask({
@@ -133,23 +154,25 @@ export function Board({ workspaceId }: BoardProps) {
           // Could revert state here
         }
       }
+      setOriginalTask(null);
     }
   };
 
   const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
   const activeColumn = activeColumnId ? columns.find((c) => c.id === activeColumnId) : null;
 
-  async function handleAddColumn() {
-    const title = window.prompt("New Column Title:");
-    if (!title) return;
+  async function handleAddColumnSubmit() {
+    if (!newColumnTitle.trim()) return;
 
+    setIsAddingColumn(false);
     toast.promise(
-      createColumn({ workspaceId, title }),
+      createColumn({ workspaceId, title: newColumnTitle }),
       {
         loading: "Adding column...",
         success: (res) => {
           if (!res.success) throw new Error(res.error);
           addColumn(res.column!);
+          setNewColumnTitle("");
           return "Column added";
         },
         error: "Failed to add column",
@@ -158,7 +181,8 @@ export function Board({ workspaceId }: BoardProps) {
   }
 
   return (
-    <DndContext
+    <>
+      <DndContext
       sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
@@ -176,7 +200,7 @@ export function Board({ workspaceId }: BoardProps) {
         ))}
 
         <Button
-          onClick={handleAddColumn}
+          onClick={() => setIsAddingColumn(true)}
           variant="outline"
           className="h-12 w-80 shrink-0 bg-white/50 dark:bg-zinc-900/50 border-dashed hover:border-primary/50"
         >
@@ -192,5 +216,27 @@ export function Board({ workspaceId }: BoardProps) {
         ) : null}
       </DragOverlay>
     </DndContext>
+
+    <Dialog open={isAddingColumn} onOpenChange={setIsAddingColumn}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add New Column</DialogTitle>
+        </DialogHeader>
+        <Input
+          placeholder="Column title..."
+          value={newColumnTitle}
+          onChange={(e) => setNewColumnTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleAddColumnSubmit();
+          }}
+          autoFocus
+        />
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsAddingColumn(false)}>Cancel</Button>
+          <Button onClick={handleAddColumnSubmit}>Add Column</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

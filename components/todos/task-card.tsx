@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { TodoTask, useTodoStore } from "@/stores/todo-store";
@@ -15,6 +16,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
 
@@ -45,10 +56,10 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
   };
 
   const { deleteTask: deleteTaskState } = useTodoStore();
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  async function handleDelete() {
-    if (!window.confirm("Are you sure you want to delete this task?")) return;
-
+  async function handleDeleteConfirm() {
+    setIsDeleting(false);
     toast.promise(
       deleteTask(task.workspaceId, task.id),
       {
@@ -93,7 +104,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" onPointerDown={(e) => e.stopPropagation()}>
-            <DropdownMenuItem onClick={handleDelete} className="text-rose-500">
+            <DropdownMenuItem onClick={() => setIsDeleting(true)} className="text-rose-500">
               <Trash className="mr-2 h-4 w-4" />
               Delete Task
             </DropdownMenuItem>
@@ -118,6 +129,23 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
           </div>
         )}
       </div>
+
+      <AlertDialog open={isDeleting} onOpenChange={setIsDeleting}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the task &quot;{task.title}&quot;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleting(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-rose-500 hover:bg-rose-600">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
