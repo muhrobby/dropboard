@@ -6,9 +6,9 @@ import { Loader2, StickyNote, Lock, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { TagInput } from "@/components/shared/tag-input";
 import { Switch } from "@/components/ui/switch";
+import { RichTextEditor } from "@/components/pinboard/rich-text-editor";
 import { useCreateNote } from "@/hooks/use-items";
 import { useWorkspaceStore } from "@/stores/workspace-store";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -26,7 +26,7 @@ export function AddNoteForm({ onSuccess, onCancel }: AddNoteFormProps) {
   const isFreeTier = subscription?.plan === "Free";
 
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState("<p></p>");
   const [tags, setTags] = useState<string[]>([]);
   const [isProtected, setIsProtected] = useState(false);
   const [password, setPassword] = useState("");
@@ -35,7 +35,7 @@ export function AddNoteForm({ onSuccess, onCancel }: AddNoteFormProps) {
 
   function reset() {
     setTitle("");
-    setContent("");
+    setContent("<p></p>");
     setTags([]);
     setIsProtected(false);
     setPassword("");
@@ -45,7 +45,8 @@ export function AddNoteForm({ onSuccess, onCancel }: AddNoteFormProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim() || !content.trim() || !activeWorkspaceId) return;
+    const isContentEmpty = !content || content === "<p></p>" || content.replace(/<[^>]+>/g, "").trim() === "";
+    if (!title.trim() || isContentEmpty || !activeWorkspaceId) return;
     if (isProtected && !password.trim()) {
       toast.error("Password is required for protected notes");
       return;
@@ -55,7 +56,7 @@ export function AddNoteForm({ onSuccess, onCancel }: AddNoteFormProps) {
       await createNote.mutateAsync({
         workspaceId: activeWorkspaceId,
         title: title.trim(),
-        content: content.trim(),
+        content,
         password: isProtected ? password.trim() : undefined,
         tags: tags.length > 0 ? tags : undefined,
         retentionDays: retentionDays ? parseInt(retentionDays, 10) : undefined,
@@ -89,14 +90,11 @@ export function AddNoteForm({ onSuccess, onCancel }: AddNoteFormProps) {
 
       <div className="space-y-1.5">
         <Label htmlFor="note-content" className="text-sm font-medium">Content <span className="text-red-500">*</span></Label>
-        <Textarea
-          id="note-content"
+        <RichTextEditor
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={setContent}
           placeholder="Write your note..."
-          rows={6}
-          className="rounded-xl bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary/20 resize-none"
-          disabled={createNote.isPending}
+          minHeight="180px"
         />
       </div>
 
@@ -200,7 +198,7 @@ export function AddNoteForm({ onSuccess, onCancel }: AddNoteFormProps) {
         )}
         <Button
           type="submit"
-          disabled={!title.trim() || !content.trim() || createNote.isPending}
+          disabled={!title.trim() || content === "<p></p>" || content.replace(/<[^>]+>/g, "").trim() === "" || createNote.isPending}
           className="rounded-xl px-6 h-10 shadow-sm"
         >
           {createNote.isPending ? (

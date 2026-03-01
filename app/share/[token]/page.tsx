@@ -3,6 +3,8 @@
 import { use, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -20,6 +22,8 @@ import {
   FileSpreadsheet,
   FileArchive,
   StickyNote,
+  Lock,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +34,7 @@ type SharedItem = {
   content: string | null;
   note: string | null;
   tags: string[];
+  isProtected: boolean;
   createdAt: string;
 };
 
@@ -38,7 +43,7 @@ type SharedFileAsset = {
   originalName: string;
   mimeType: string;
   sizeBytes: number;
-  downloadUrl: string;
+  downloadUrl: string | null;
 };
 
 type ShareData = {
@@ -47,6 +52,8 @@ type ShareData = {
     token: string;
     expiresAt: string | null;
     accessCount: number;
+    maxViews: number | null;
+    burnAfterReading: boolean;
     createdAt: string;
   };
   item: SharedItem;
@@ -131,19 +138,135 @@ function getFileIconInfo(mimeType: string) {
   return { icon, color, bgColor };
 }
 
+// ── Password gate ─────────────────────────────────────────────────────────────
+function PasswordGate({
+  token,
+  onUnlocked,
+}: {
+  token: string;
+  onUnlocked: (data: ShareData) => void;
+}) {
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!password.trim()) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/v1/share/${token}/unlock`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error?.message || "Invalid password");
+      }
+
+      // Map unlock response format to ShareData format
+      const { share, item, fileAsset } = result.data;
+      onUnlocked({
+        share: {
+          id: share.id,
+          token: share.token,
+          expiresAt: share.expiresAt,
+          accessCount: share.accessCount ?? 0,
+          maxViews: share.maxViews ?? null,
+          burnAfterReading: share.burnAfterReading ?? false,
+          createdAt: share.createdAt,
+        },
+        item: { ...item, isProtected: false },
+        fileAsset: fileAsset
+          ? { ...fileAsset, downloadUrl: fileAsset.downloadUrl }
+          : null,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invalid password");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <Card className="w-full max-w-sm">
+        <CardContent className="p-6 space-y-5">
+          <div className="flex flex-col items-center gap-2 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <Lock className="h-6 w-6 text-primary" />
+            </div>
+            <h2 className="text-lg font-semibold">Password Protected</h2>
+            <p className="text-sm text-muted-foreground">
+              Enter the password to view this shared item.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password…"
+                autoFocus
+                autoComplete="current-password"
+              />
+            </div>
+
+            {error && (
+              <p className="text-sm text-destructive flex items-center gap-1.5">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                {error}
+              </p>
+            )}
+
+            <Button type="submit" className="w-full" disabled={isLoading || !password.trim()}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Unlocking…
+                </>
+              ) : (
+                "Unlock"
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <div className="fixed bottom-4 left-0 right-0 text-center">
+        <p className="text-xs text-muted-foreground">
+          Shared via{" "}
+          <Link href="/" className="text-primary hover:underline">
+            Dropboard
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── Content views ─────────────────────────────────────────────────────────────
 function ShareDropView({
   item,
   fileAsset,
 }: {
   item: SharedItem;
-  fileAsset: SharedFileAsset;
+  fileAsset: SharedFileAsset & { downloadUrl: string };
 }) {
   const isImage = isImageMime(fileAsset.mimeType);
   const { icon: FileIcon, color, bgColor } = getFileIconInfo(fileAsset.mimeType);
 
   return (
     <div className="space-y-4">
-      {/* Preview */}
       <div className="rounded-lg overflow-hidden bg-muted">
         {isImage ? (
           <img
@@ -161,20 +284,17 @@ function ShareDropView({
         )}
       </div>
 
-      {/* File Info */}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>{fileAsset.mimeType}</span>
         <span>{formatSize(fileAsset.sizeBytes)}</span>
       </div>
 
-      {/* Note */}
       {item.note && (
         <div className="p-4 bg-muted rounded-lg">
           <p className="text-sm whitespace-pre-wrap">{item.note}</p>
         </div>
       )}
 
-      {/* Download Button */}
       <Button className="w-full" asChild>
         <a href={fileAsset.downloadUrl} download={fileAsset.originalName}>
           <Download className="mr-2 h-4 w-4" />
@@ -198,14 +318,12 @@ function ShareLinkView({ item }: { item: SharedItem }) {
         </div>
       </div>
 
-      {/* Note */}
       {item.note && (
         <div className="p-4 bg-muted rounded-lg">
           <p className="text-sm whitespace-pre-wrap">{item.note}</p>
         </div>
       )}
 
-      {/* Open Link Button */}
       <Button className="w-full" asChild>
         <a href={item.content || "#"} target="_blank" rel="noopener noreferrer">
           <ExternalLink className="mr-2 h-4 w-4" />
@@ -228,7 +346,6 @@ function ShareNoteView({ item }: { item: SharedItem }) {
         </div>
       </div>
 
-      {/* Content */}
       <div className="p-4 bg-muted rounded-lg min-h-[200px]">
         <p className="text-sm whitespace-pre-wrap">{item.content}</p>
       </div>
@@ -236,6 +353,7 @@ function ShareNoteView({ item }: { item: SharedItem }) {
   );
 }
 
+// ── Main page ─────────────────────────────────────────────────────────────────
 export default function SharePage({
   params,
 }: {
@@ -245,6 +363,7 @@ export default function SharePage({
   const [data, setData] = useState<ShareData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isProtected, setIsProtected] = useState(false);
 
   useEffect(() => {
     async function fetchShare() {
@@ -256,7 +375,13 @@ export default function SharePage({
           throw new Error(result.error?.message || "Share not found");
         }
 
-        setData(result.data);
+        const shareData: ShareData = result.data;
+
+        if (shareData.item.isProtected) {
+          setIsProtected(true);
+        } else {
+          setData(shareData);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load share");
       } finally {
@@ -267,6 +392,7 @@ export default function SharePage({
     fetchShare();
   }, [token]);
 
+  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -281,7 +407,8 @@ export default function SharePage({
     );
   }
 
-  if (error || !data) {
+  // Error state
+  if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-background">
         <Card className="w-full max-w-md">
@@ -301,6 +428,21 @@ export default function SharePage({
       </div>
     );
   }
+
+  // Password gate
+  if (isProtected && !data) {
+    return (
+      <PasswordGate
+        token={token}
+        onUnlocked={(unlockedData) => {
+          setData(unlockedData);
+          setIsProtected(false);
+        }}
+      />
+    );
+  }
+
+  if (!data) return null;
 
   const { share, item, fileAsset } = data;
 
@@ -322,6 +464,9 @@ export default function SharePage({
             <span className="flex items-center gap-1">
               <Eye className="h-3 w-3" />
               {share.accessCount} views
+              {share.maxViews && (
+                <span className="ml-0.5">/ {share.maxViews} max</span>
+              )}
             </span>
           </div>
           {item.tags.length > 0 && (
@@ -335,15 +480,17 @@ export default function SharePage({
           )}
         </CardHeader>
         <CardContent>
-          {item.type === "drop" && fileAsset && (
-            <ShareDropView item={item} fileAsset={fileAsset} />
+          {item.type === "drop" && fileAsset && fileAsset.downloadUrl && (
+            <ShareDropView
+              item={item}
+              fileAsset={fileAsset as SharedFileAsset & { downloadUrl: string }}
+            />
           )}
           {item.type === "link" && <ShareLinkView item={item} />}
           {item.type === "note" && <ShareNoteView item={item} />}
         </CardContent>
       </Card>
 
-      {/* Footer */}
       <div className="fixed bottom-4 left-0 right-0 text-center">
         <p className="text-xs text-muted-foreground">
           Shared via{" "}

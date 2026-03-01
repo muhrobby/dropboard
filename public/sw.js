@@ -1,8 +1,10 @@
 // Dropboard Service Worker
 // Cache-first for static assets, network-first for API calls
-// With Share Target API support
+// With Share Target API, Offline File Access, and Background Sync support
 
 const CACHE_NAME = "dropboard-v3";
+const OFFLINE_FILES_CACHE = "dropboard-offline-files";
+const UPLOAD_QUEUE_STORE = "dropboard-upload-queue";
 const STATIC_ASSETS = [
   "/",
   "/dashboard",
@@ -43,25 +45,30 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== CACHE_NAME && key.startsWith("dropboard-"))
+          .filter(
+            (key) =>
+              key !== CACHE_NAME &&
+              key !== OFFLINE_FILES_CACHE &&
+              key.startsWith("dropboard-")
+          )
           .map((key) => caches.delete(key))
       )
     ).then(() => self.clients.claim())
   );
 });
 
-// Fetch: handle share target, network-first for API, cache-first for static
+// Fetch: handle share target, offline files, network-first for API, cache-first for static
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
   // Handle Share Target POST requests
   if (request.method === "POST" && url.pathname === "/share-target") {
-    event.respondWith(handleShareTarget(request));
+    event.respondWith(handleShareTarget(request, event.resultingClientId));
     return;
   }
 
-  // Skip non-GET requests
+  // Skip non-GET requests (uploads handled by background sync)
   if (request.method !== "GET") return;
 
   // Skip cross-origin requests (external scripts, fonts, etc)
@@ -69,7 +76,24 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Network-first for API routes
+  // Offline files cache: serve cached file downloads even when offline
+  if (url.pathname.startsWith("/api/v1/files/")) {
+    event.respondWith(
+      caches.match(request, { cacheName: OFFLINE_FILES_CACHE }).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).catch(() => {
+          // If offline and no cache, return a meaningful error response
+          return new Response(
+            JSON.stringify({ success: false, error: { code: "OFFLINE", message: "File not available offline" } }),
+            { status: 503, headers: { "Content-Type": "application/json" } }
+          );
+        });
+      })
+    );
+    return;
+  }
+
+  // Network-first for other API routes
   if (url.pathname.startsWith("/api/")) {
     event.respondWith(
       fetch(request).catch(() => caches.match(request))
@@ -77,7 +101,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first for static assets
+  // Cache-first for static assets (stale-while-revalidate)
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) {
@@ -102,8 +126,113 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
+// ─── Background Sync ────────────────────────────────────────────────────────
+
+/**
+ * Open the IndexedDB upload queue.
+ * Schema: { id (string), formDataEntries (array of {name, value, fileName?}), workspaceId }
+ */
+function openUploadQueueDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(UPLOAD_QUEUE_STORE, 1);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains("queue")) {
+        db.createObjectStore("queue", { keyPath: "id" });
+      }
+    };
+    req.onsuccess = (e) => resolve(e.target.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function getAllQueuedUploads(db) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("queue", "readonly");
+    const store = tx.objectStore("queue");
+    const req = store.getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function removeQueuedUpload(db, id) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("queue", "readwrite");
+    const store = tx.objectStore("queue");
+    const req = store.delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+self.addEventListener("sync", (event) => {
+  if (event.tag === "dropboard-upload") {
+    event.waitUntil(processPendingUploads());
+  }
+});
+
+async function processPendingUploads() {
+  let db;
+  try {
+    db = await openUploadQueueDB();
+  } catch (err) {
+    console.error("[SW] Failed to open upload queue DB:", err);
+    return;
+  }
+
+  const pending = await getAllQueuedUploads(db);
+  if (!pending.length) return;
+
+  for (const entry of pending) {
+    try {
+      // Re-build FormData from stored entries
+      const formData = new FormData();
+      for (const { name, value, fileName, type } of entry.formDataEntries) {
+        if (fileName) {
+          // Reconstruct Blob from base64
+          const bytes = Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
+          const blob = new Blob([bytes], { type });
+          formData.append(name, blob, fileName);
+        } else {
+          formData.append(name, value);
+        }
+      }
+
+      const response = await fetch(
+        `/api/v1/files/upload?workspaceId=${entry.workspaceId}`,
+        { method: "POST", body: formData }
+      );
+
+      if (response.ok) {
+        await removeQueuedUpload(db, entry.id);
+        // Notify all open clients
+        const clients = await self.clients.matchAll({ type: "window" });
+        for (const client of clients) {
+          client.postMessage({ type: "UPLOAD_COMPLETE", id: entry.id, title: entry.title });
+        }
+      } else {
+        console.warn("[SW] Upload failed for", entry.id, "status:", response.status);
+        // Leave in queue for next sync attempt (unless 4xx — then remove to avoid loop)
+        if (response.status >= 400 && response.status < 500) {
+          await removeQueuedUpload(db, entry.id);
+          const clients = await self.clients.matchAll({ type: "window" });
+          for (const client of clients) {
+            client.postMessage({ type: "UPLOAD_FAILED", id: entry.id, title: entry.title });
+          }
+        }
+      }
+    } catch (err) {
+      console.error("[SW] Error processing upload queue entry", entry.id, err);
+      // Network error — leave in queue for retry
+    }
+  }
+}
+
+// ─── Share Target ────────────────────────────────────────────────────────────
+
 // Handle Share Target API
-async function handleShareTarget(request) {
+async function handleShareTarget(request, resultingClientId) {
   try {
     const formData = await request.formData();
     
@@ -133,7 +262,7 @@ async function handleShareTarget(request) {
       );
       
       // Use clients API to pass files to the page
-      const client = await self.clients.get(event.resultingClientId);
+      const client = await self.clients.get(resultingClientId);
       if (client) {
         client.postMessage({
           type: "SHARE_TARGET_FILES",

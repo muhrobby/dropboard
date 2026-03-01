@@ -7,6 +7,7 @@ import {
   timestamp,
   integer,
   index,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { ulid } from "ulid";
 import { workspaces } from "./workspaces";
@@ -37,9 +38,19 @@ export const items = pgTable(
     maxDownloads: integer("max_downloads"),
     downloadCount: integer("download_count").notNull().default(0),
     fileAssetId: text("file_asset_id"),
+    // Collection (virtual folder) this item belongs to
+    collectionId: text("collection_id"),
+    // PWA offline access: if true, the SW will cache this item's file for offline use
+    availableOffline: boolean("available_offline").notNull().default(false),
     // OCR extracted text for image files
     ocrText: text("ocr_text"),
     ocrStatus: varchar("ocr_status", { length: 20 }), // pending, completed, failed, null
+    // Rich metadata for link items (OG image, description, favicon URL)
+    linkMetadata: jsonb("link_metadata").$type<{
+      ogImage?: string | null;
+      ogDescription?: string | null;
+      faviconUrl?: string | null;
+    }>(),
     // Soft delete: null = active, timestamp = deleted
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),

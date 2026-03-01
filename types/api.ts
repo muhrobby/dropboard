@@ -87,9 +87,58 @@ export type FileAssetResponse = {
   scanStatus: string | null;
   scanResult: string | null;
   scannedAt: string | null;
+  // Media metadata
+  metadata: {
+    width?: number;
+    height?: number;
+    duration?: number | null;
+    pageCount?: number | null;
+    exif?: Record<string, unknown>;
+  } | null;
+};
+
+// Collection
+export type CollectionResponse = {
+  id: string;
+  workspaceId: string;
+  createdBy: string;
+  name: string;
+  parentId: string | null;
+  isPublic: boolean;
+  shareToken: string | null;
+  boardUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// Public Board (unauthenticated view of a published collection)
+export type PublicBoardResponse = {
+  collection: {
+    id: string;
+    name: string;
+    shareToken: string;
+  };
+  items: PublicBoardItem[];
+};
+
+export type PublicBoardItem = {
+  id: string;
+  type: "link" | "note";
+  title: string;
+  content: string | null;
+  note: string | null;
+  tags: string[];
+  createdAt: string;
+  linkMetadata: LinkMetadata | null;
 };
 
 // Item
+export type LinkMetadata = {
+  ogImage?: string | null;
+  ogDescription?: string | null;
+  faviconUrl?: string | null;
+};
+
 export type ItemResponse = {
   id: string;
   workspaceId: string;
@@ -103,6 +152,7 @@ export type ItemResponse = {
   isPinned: boolean;
   expiresAt: string | null;
   fileAssetId: string | null;
+  collectionId: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
@@ -110,6 +160,10 @@ export type ItemResponse = {
   // OCR fields
   ocrText: string | null;
   ocrStatus: string | null;
+  // PWA offline access
+  availableOffline: boolean;
+  // Rich metadata for link items (OG image, description, favicon)
+  linkMetadata: LinkMetadata | null;
 };
 
 // Activity Log
@@ -127,4 +181,66 @@ export type ActivityLogResponse = {
     email: string;
     image?: string | null;
   };
+};
+
+// Item Version
+export type ItemVersionResponse = {
+  id: string;
+  itemId: string;
+  workspaceId: string;
+  fileAssetId: string;
+  createdBy: string;
+  versionNumber: number;
+  label: string | null;
+  createdAt: string;
+  fileAsset: FileAssetResponse | null;
+};
+
+// Item Comment
+export type ItemCommentResponse = {
+  id: string;
+  itemId: string;
+  workspaceId: string;
+  authorId: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+  author?: {
+    name: string;
+    email: string;
+    image?: string | null;
+  };
+};
+
+// Share
+export type ShareResponse = {
+  id: string;
+  itemId: string;
+  token: string;
+  createdBy: string;
+  expiresAt: string | null;
+  accessCount: number;
+  passwordHash: string | null;
+  maxViews: number | null;
+  burnAfterReading: boolean;
+  createdAt: string;
+  shareUrl: string;
+  isPasswordProtected: boolean;
+};
+
+// Share Analytics
+export type ShareAnalyticsEntryResponse = {
+  id: string;
+  shareId: string;
+  ipHash: string | null;
+  userAgent: string | null;
+  referer: string | null;
+  accessedAt: string;
+};
+
+export type ShareAnalyticsResponse = {
+  totalViews: number;
+  last30Days: number;
+  recentEntries: ShareAnalyticsEntryResponse[];
+  dailyCounts: { date: string; count: number }[];
 };

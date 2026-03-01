@@ -4,10 +4,19 @@ import {
   varchar,
   bigint,
   timestamp,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { ulid } from "ulid";
 import { workspaces } from "./workspaces";
 import { users } from "./auth";
+
+export type FileMetadata = {
+  width?: number;
+  height?: number;
+  duration?: number | null;   // seconds (video/audio); null if unknown
+  pageCount?: number | null;  // PDF; null if unknown
+  exif?: Record<string, unknown>;
+};
 
 export const fileAssets = pgTable("file_assets", {
   id: text("id")
@@ -28,5 +37,6 @@ export const fileAssets = pgTable("file_assets", {
   scanStatus: varchar("scan_status", { length: 20 }),
   scanResult: text("scan_result"), // Details if infected or error
   scannedAt: timestamp("scanned_at", { mode: "date", withTimezone: true }),
+  metadata: jsonb("metadata").$type<FileMetadata>(),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).notNull(),
 });

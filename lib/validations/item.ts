@@ -60,6 +60,7 @@ export const updateItemSchema = z.object({
     .array(z.string().max(50))
     .max(10, "Maximum 10 tags")
     .optional(),
+  collectionId: z.string().nullable().optional(),
 });
 
 export const listItemsQuerySchema = z.object({

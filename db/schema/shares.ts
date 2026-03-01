@@ -4,6 +4,7 @@ import {
   varchar,
   timestamp,
   integer,
+  boolean,
   index,
 } from "drizzle-orm/pg-core";
 import { ulid } from "ulid";
@@ -25,6 +26,10 @@ export const shares = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     accessCount: integer("access_count").notNull().default(0),
+    // Phase 4: security controls
+    passwordHash: text("password_hash"),
+    maxViews: integer("max_views"),
+    burnAfterReading: boolean("burn_after_reading").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .$defaultFn(() => new Date()),

@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { fileAssets, workspaces } from "@/db/schema";
+import type { FileMetadata } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { ulid } from "ulid";
 import { saveFile, deleteFile, getAbsolutePath } from "@/lib/file-storage";
@@ -10,6 +11,7 @@ import {
 import { validateFileMimeType, sanitizeFilename, FileValidationError } from "@/lib/file-validator";
 import { queueScan, isScanEnabled } from "@/services/virus-scan-service";
 import { canUploadFile } from "@/lib/tier-guard";
+import { imageSize } from "image-size";
 
 type UploadResult = {
   fileAssetId: string;
@@ -17,6 +19,31 @@ type UploadResult = {
   mimeType: string;
   sizeBytes: number;
 };
+
+/**
+ * Extract media metadata from a file buffer based on its MIME type.
+ * Returns null if extraction fails or mime type is unsupported.
+ */
+function extractMetadata(buffer: Buffer, mimeType: string): FileMetadata | null {
+  try {
+    if (mimeType.startsWith("image/")) {
+      const info = imageSize(buffer);
+      if (info.width && info.height) {
+        return { width: info.width, height: info.height };
+      }
+    } else if (mimeType.startsWith("video/")) {
+      // Server-side duration extraction requires ffprobe — not available; store nulls
+      return { duration: null };
+    } else if (mimeType.startsWith("audio/")) {
+      return { duration: null };
+    } else if (mimeType === "application/pdf") {
+      return { pageCount: null };
+    }
+  } catch {
+    // Ignore extraction errors — metadata is non-critical
+  }
+  return null;
+}
 
 /**
  * Upload a file: validate, save to disk, create DB record, update workspace storage.
@@ -94,6 +121,9 @@ export async function uploadFile(
       workspaceId
     );
 
+    // Extract metadata (non-critical — errors are swallowed in extractMetadata)
+    const metadata = extractMetadata(buffer, detectedMimeType);
+
     // Create DB record
     const fileAssetId = ulid();
     await tx.insert(fileAssets).values({
@@ -105,6 +135,7 @@ export async function uploadFile(
       mimeType: detectedMimeType,
       sizeBytes: file.size,
       storagePath,
+      metadata: metadata ?? undefined,
       scanStatus: isScanEnabled() ? "pending" : null,
       createdAt: new Date(),
     });

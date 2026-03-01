@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useDraggable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 import {
   FileText,
   Image as ImageIcon,
@@ -18,6 +20,7 @@ import {
   ShieldAlert,
   ShieldQuestion,
   Loader2,
+  PanelRight,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,6 +48,8 @@ import { cn } from "@/lib/utils";
 
 type DropCardProps = {
   item: ItemResponse;
+  onPreview?: (item: ItemResponse) => void;
+  onDetails?: (item: ItemResponse) => void;
 };
 
 function formatSize(bytes: number): string {
@@ -173,12 +178,21 @@ function OcrStatusBadge({ status, ocrText }: { status: string | null; ocrText: s
   );
 }
 
-export function DropCard({ item }: DropCardProps) {
+export function DropCard({ item, onPreview, onDetails }: DropCardProps) {
   const [showDelete, setShowDelete] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const pinItem = usePinItem();
   const unpinItem = useUnpinItem();
   const deleteItem = useDeleteItem();
+
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `item:${item.id}`,
+    data: { itemId: item.id },
+  });
+
+  const dragStyle = transform
+    ? { transform: CSS.Translate.toString(transform) }
+    : undefined;
 
   const fileAsset = item.fileAsset;
   const isImage = fileAsset ? isImageMime(fileAsset.mimeType) : false;
@@ -224,9 +238,24 @@ export function DropCard({ item }: DropCardProps) {
 
   return (
     <>
-      <Card className="group overflow-hidden hover:shadow-md transition-shadow">
+      <Card
+        ref={setNodeRef}
+        style={dragStyle}
+        className={cn(
+          "group overflow-hidden hover:shadow-md transition-shadow",
+          isDragging && "opacity-50 ring-2 ring-primary",
+        )}
+        {...listeners}
+        {...attributes}
+      >
         {/* Thumbnail / Icon */}
-        <div className="relative flex h-32 items-center justify-center bg-muted">
+        <div
+          className={cn(
+            "relative flex h-32 items-center justify-center bg-muted",
+            onPreview && "cursor-pointer"
+          )}
+          onClick={() => onPreview?.(item)}
+        >
           {isImage && fileAsset?.downloadUrl ? (
             <img
               src={fileAsset.downloadUrl}
@@ -255,22 +284,28 @@ export function DropCard({ item }: DropCardProps) {
             </div>
           )}
 
-          {/* Hover actions overlay */}
-          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 backdrop-blur-sm">
-            <PinButton
-              isPinned={item.isPinned}
-              onPin={handlePin}
-              onUnpin={handleUnpin}
-              disabled={pinItem.isPending || unpinItem.isPending}
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDownload}
-              className="h-8 w-8 text-white hover:text-white hover:bg-white/20"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
+          {/* Hover actions overlay — pointer-events-none on mobile (no hover), auto only on desktop hover */}
+          <div
+            className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 backdrop-blur-sm pointer-events-none group-hover:pointer-events-auto"
+          >
+            <div onClick={(e) => e.stopPropagation()}>
+              <PinButton
+                isPinned={item.isPinned}
+                onPin={handlePin}
+                onUnpin={handleUnpin}
+                disabled={pinItem.isPending || unpinItem.isPending}
+              />
+            </div>
+            <div onClick={(e) => e.stopPropagation()}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleDownload}
+                className="h-8 w-8 text-white hover:text-white hover:bg-white/20"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -300,6 +335,12 @@ export function DropCard({ item }: DropCardProps) {
                   <Share2 className="mr-2 h-3.5 w-3.5" />
                   Share
                 </DropdownMenuItem>
+                {onDetails && (
+                  <DropdownMenuItem onClick={() => onDetails(item)}>
+                    <PanelRight className="mr-2 h-3.5 w-3.5" />
+                    Details
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={item.isPinned ? handleUnpin : handlePin}>
                   {item.isPinned ? "Unpin" : "Pin"}
                 </DropdownMenuItem>

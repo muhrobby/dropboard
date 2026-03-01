@@ -7,6 +7,7 @@ import type { ApiResponse, ItemResponse } from "@/types/api";
 type UploadParams = {
   file: File;
   workspaceId: string;
+  collectionId?: string | null;
   title?: string;
   note?: string;
   tags?: string[];
@@ -19,6 +20,7 @@ type UploadParams = {
 type UploadMultipleParams = {
   files: File[];
   workspaceId: string;
+  collectionId?: string | null;
   folderName?: string;
   note?: string;
   tags?: string[];
@@ -37,6 +39,7 @@ async function uploadFile(params: UploadParams): Promise<ItemResponse> {
   const formData = new FormData();
   formData.append("file", params.file);
   formData.append("workspaceId", params.workspaceId);
+  if (params.collectionId) formData.append("collectionId", params.collectionId);
   if (params.title) formData.append("title", params.title);
   if (params.note) formData.append("note", params.note);
   if (params.tags && params.tags.length > 0) {
@@ -69,6 +72,7 @@ async function uploadMultipleFiles(params: UploadMultipleParams): Promise<ItemRe
     const formData = new FormData();
     formData.append("file", file);
     formData.append("workspaceId", params.workspaceId);
+    if (params.collectionId) formData.append("collectionId", params.collectionId);
 
     // Untuk multiple upload dengan folder, tambahkan folder name ke title
     if (params.folderName) {

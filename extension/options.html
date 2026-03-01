@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dropboard — Settings</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f11;
+      --bg-surface: #18181b;
+      --bg-raised: #232329;
+      --border: #2e2e35;
+      --border-focus: #6d6dff;
+      --text: #e4e4e7;
+      --text-muted: #71717a;
+      --text-placeholder: #52525b;
+      --accent: #6d6dff;
+      --accent-hover: #7c7cff;
+      --success: #22c55e;
+      --error: #f43f5e;
+      --radius: 6px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 40px 24px 60px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    .logo-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: var(--accent);
+      border-radius: 8px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .header-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Card */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    /* Field */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 14px;
+    }
+
+    .field:last-child { margin-bottom: 0; }
+
+    .field label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .field input, .field select {
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      padding: 8px 10px;
+      outline: none;
+      transition: border-color 0.15s;
+      width: 100%;
+    }
+
+    .field input::placeholder { color: var(--text-placeholder); }
+
+    .field input:focus, .field select:focus {
+      border-color: var(--border-focus);
+    }
+
+    .field .hint {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Workspace list */
+    #workspace-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .workspace-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: border-color 0.15s;
+      user-select: none;
+    }
+
+    .workspace-option:hover { border-color: var(--border-focus); }
+
+    .workspace-option.selected {
+      border-color: var(--accent);
+      background: rgba(109,109,255,0.08);
+    }
+
+    .workspace-radio {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--border);
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .workspace-option.selected .workspace-radio {
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .workspace-option.selected .workspace-radio::after {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    .workspace-name {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: var(--radius);
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-outline:hover:not(:disabled) { background: var(--bg-raised); }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--error);
+      border: 1px solid rgba(244,63,94,0.3);
+    }
+    .btn-danger:hover:not(:disabled) { background: rgba(244,63,94,0.08); }
+
+    .actions-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* Status bar */
+    #status-bar {
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      margin-top: 12px;
+      display: none;
+    }
+
+    #status-bar.success {
+      display: block;
+      background: rgba(34,197,94,0.10);
+      color: var(--success);
+      border: 1px solid rgba(34,197,94,0.20);
+    }
+
+    #status-bar.error {
+      display: block;
+      background: rgba(244,63,94,0.10);
+      color: var(--error);
+      border: 1px solid rgba(244,63,94,0.20);
+    }
+
+    /* Version */
+    .version-tag {
+      font-size: 11px;
+      color: var(--text-placeholder);
+      margin-top: 24px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="logo-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19 21l-7-4-7 4V5a2 2 0 012-2h10a2 2 0 012 2v16z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="header-title">Dropboard Settings</div>
+        <div class="header-sub">Web Clipper Extension</div>
+      </div>
+    </div>
+
+    <!-- Connection card -->
+    <div class="card">
+      <div class="card-title">Connection</div>
+      <div class="field">
+        <label for="input-url">App URL</label>
+        <input id="input-url" type="url" placeholder="https://app.dropboard.io" />
+        <span class="hint">The URL where your Dropboard instance is hosted.</span>
+      </div>
+      <div class="actions-row">
+        <button id="btn-connect" class="btn btn-primary">Connect &amp; Load Workspaces</button>
+        <button id="btn-disconnect" class="btn btn-danger">Disconnect</button>
+      </div>
+      <div id="status-bar"></div>
+    </div>
+
+    <!-- Workspace card -->
+    <div class="card" id="workspace-card" style="display:none">
+      <div class="card-title">Active Workspace</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">
+        Items saved via the extension will go into this workspace.
+      </p>
+      <div id="workspace-list"></div>
+      <div class="actions-row">
+        <button id="btn-save-workspace" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+
+    <p class="version-tag" id="version-tag"></p>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

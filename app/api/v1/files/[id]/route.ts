@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
+import { createHash } from "crypto";
 import { getFileForDownload } from "@/services/file-service";
 import { verifySignedToken } from "@/lib/file-storage";
 import {
@@ -76,6 +77,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Read file from disk
     const fileBuffer = await readFile(fileAsset.absolutePath);
 
+    // Compute ETag from file content for conditional requests
+    const etag = `"${createHash("md5").update(fileBuffer).digest("hex")}"`;
+    const ifNoneMatch = request.headers.get("if-none-match");
+    if (ifNoneMatch === etag) {
+      return new NextResponse(null, { status: 304, headers: { ETag: etag } });
+    }
+
     // Safe MIME types that can be rendered inline in the browser without XSS risk.
     // Notice: SVG is intentionally EXCLUDED because it can contain malicious <script> tags.
     const safeInlineMimeTypes = new Set([
@@ -105,6 +113,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         "Content-Disposition": `${dispositionType}; filename="${encodeURIComponent(fileAsset.originalName)}"`,
         "Content-Length": fileAsset.sizeBytes.toString(),
         "Cache-Control": "private, max-age=3600",
+        "ETag": etag,
         // Extra security headers for file serving
         "X-Content-Type-Options": "nosniff",
         "Content-Security-Policy": "default-src 'none'",

@@ -112,7 +112,7 @@ export default function DashboardPage() {
 
   if (workspacesLoading) {
     return (
-      <div className="p-6 lg:p-8 space-y-8">
+      <div className="p-6 lg:p-8 pb-24 md:pb-8 max-w-7xl mx-auto w-full space-y-8 overflow-y-auto">
         <div className="flex justify-between">
           <div className="space-y-2">
             <Skeleton className="h-8 w-48" />
@@ -130,7 +130,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8 pb-24 md:pb-8 max-w-7xl mx-auto w-full overflow-y-auto">
       <OverviewLayout>
         {/* Page Header */}
         <PageHeader

@@ -12,6 +12,11 @@ import { subscriptions, paymentGatewayConfig } from "./subscriptions";
 import { topupOrders } from "./topup-orders";
 import { pricingTiers } from "./pricing-tiers";
 import { todoColumns, todoTasks, todoTaskComments } from "./todos";
+import { collections } from "./collections";
+import { itemVersions } from "./item-versions";
+import { itemComments } from "./item-comments";
+import { shares } from "./shares";
+import { shareAnalytics } from "./share-analytics";
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
   user: one(users, {
@@ -40,6 +45,7 @@ export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
   webhooks: many(webhooks),
   todoColumns: many(todoColumns),
   todoTasks: many(todoTasks),
+  collections: many(collections),
 }));
 
 export const workspaceMembersRelations = relations(
@@ -56,7 +62,7 @@ export const workspaceMembersRelations = relations(
   })
 );
 
-export const itemsRelations = relations(items, ({ one }) => ({
+export const itemsRelations = relations(items, ({ one, many }) => ({
   workspace: one(workspaces, {
     fields: [items.workspaceId],
     references: [workspaces.id],
@@ -69,6 +75,12 @@ export const itemsRelations = relations(items, ({ one }) => ({
     fields: [items.createdBy],
     references: [users.id],
   }),
+  collection: one(collections, {
+    fields: [items.collectionId],
+    references: [collections.id],
+  }),
+  versions: many(itemVersions),
+  comments: many(itemComments),
 }));
 
 export const fileAssetsRelations = relations(fileAssets, ({ one }) => ({
@@ -214,6 +226,81 @@ export const todoTaskCommentsRelations = relations(todoTaskComments, ({ one }) =
   }),
 }));
 
+export const collectionsRelations = relations(collections, ({ one, many }) => ({
+  workspace: one(workspaces, {
+    fields: [collections.workspaceId],
+    references: [workspaces.id],
+  }),
+  creator: one(users, {
+    fields: [collections.createdBy],
+    references: [users.id],
+    relationName: "collectionCreator",
+  }),
+  parent: one(collections, {
+    fields: [collections.parentId],
+    references: [collections.id],
+    relationName: "collectionParent",
+  }),
+  children: many(collections, { relationName: "collectionParent" }),
+  items: many(items),
+}));
+
+export const itemVersionsRelations = relations(itemVersions, ({ one }) => ({
+  item: one(items, {
+    fields: [itemVersions.itemId],
+    references: [items.id],
+  }),
+  workspace: one(workspaces, {
+    fields: [itemVersions.workspaceId],
+    references: [workspaces.id],
+  }),
+  fileAsset: one(fileAssets, {
+    fields: [itemVersions.fileAssetId],
+    references: [fileAssets.id],
+  }),
+  creator: one(users, {
+    fields: [itemVersions.createdBy],
+    references: [users.id],
+    relationName: "itemVersionCreator",
+  }),
+}));
+
+export const itemCommentsRelations = relations(itemComments, ({ one }) => ({
+  item: one(items, {
+    fields: [itemComments.itemId],
+    references: [items.id],
+  }),
+  workspace: one(workspaces, {
+    fields: [itemComments.workspaceId],
+    references: [workspaces.id],
+  }),
+  author: one(users, {
+    fields: [itemComments.authorId],
+    references: [users.id],
+    relationName: "itemCommentAuthor",
+  }),
+}));
+
+export const sharesRelations = relations(shares, ({ one, many }) => ({
+  item: one(items, {
+    fields: [shares.itemId],
+    references: [items.id],
+  }),
+  creator: one(users, {
+    fields: [shares.createdBy],
+    references: [users.id],
+    relationName: "shareCreator",
+  }),
+  analytics: many(shareAnalytics),
+}));
+
+export const shareAnalyticsRelations = relations(shareAnalytics, ({ one }) => ({
+  share: one(shares, {
+    fields: [shareAnalytics.shareId],
+    references: [shares.id],
+  }),
+}));
+
 export const usersRelations = relations(users, ({ many, one }) => ({
   sessions: many(sessions),
   accounts: many(accounts),
@@ -229,4 +316,8 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   createdTasks: many(todoTasks, { relationName: "taskCreator" }),
   assignedTasks: many(todoTasks, { relationName: "taskAssignee" }),
   todoComments: many(todoTaskComments, { relationName: "commentAuthor" }),
+  createdCollections: many(collections, { relationName: "collectionCreator" }),
+  createdItemVersions: many(itemVersions, { relationName: "itemVersionCreator" }),
+  itemComments: many(itemComments, { relationName: "itemCommentAuthor" }),
+  createdShares: many(shares, { relationName: "shareCreator" }),
 }));

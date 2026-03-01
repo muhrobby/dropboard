@@ -23,6 +23,9 @@ import {
   FolderOpen,
   Share2,
   Link2Off,
+  GitBranch,
+  RotateCcw,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ActivityAction } from "@/types";
@@ -42,6 +45,10 @@ const actionConfig: Record<
   MEMBER_REMOVED: { icon: UserMinus, label: "removed a member", color: "text-red-600" },
   SHARE_CREATED: { icon: Share2, label: "shared an item", color: "text-cyan-600" },
   SHARE_REVOKED: { icon: Link2Off, label: "revoked a share link", color: "text-gray-600" },
+  ITEM_VERSION_UPLOADED: { icon: GitBranch, label: "uploaded a new version", color: "text-indigo-600" },
+  ITEM_REVERTED: { icon: RotateCcw, label: "reverted to a previous version", color: "text-orange-600" },
+  ITEM_COMMENT_ADDED: { icon: MessageSquare, label: "commented on an item", color: "text-blue-600" },
+  ITEM_COMMENT_DELETED: { icon: MessageSquare, label: "deleted a comment", color: "text-gray-600" },
 };
 
 function getInitials(name: string) {

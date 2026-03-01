@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Save to Dropboard</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Loading state -->
+    <div id="state-loading" class="state-screen">
+      <div class="spinner"></div>
+      <p class="loading-text">Loading…</p>
+    </div>
+
+    <!-- Not configured state -->
+    <div id="state-setup" class="state-screen hidden">
+      <div class="logo-wrap">
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 21l-7-4-7 4V5a2 2 0 012-2h10a2 2 0 012 2v16z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      <h1 class="title">Dropboard</h1>
+      <p class="subtitle">Set your Dropboard URL to get started</p>
+      <div class="field">
+        <label for="setup-url">App URL</label>
+        <input id="setup-url" type="url" placeholder="https://app.dropboard.io" />
+      </div>
+      <button id="btn-save-setup" class="btn btn-primary">Save & Continue</button>
+    </div>
+
+    <!-- Main save form -->
+    <div id="state-main" class="state-screen hidden">
+      <header class="popup-header">
+        <div class="header-brand">
+          <div class="logo-icon small">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M19 21l-7-4-7 4V5a2 2 0 012-2h10a2 2 0 012 2v16z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="header-title">Dropboard</span>
+        </div>
+        <button id="btn-settings" class="icon-btn" title="Settings">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+          </svg>
+        </button>
+      </header>
+
+      <div class="form-body">
+        <!-- Type toggle -->
+        <div class="type-tabs">
+          <button id="tab-link" class="type-tab active" data-type="link">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+            </svg>
+            Link
+          </button>
+          <button id="tab-note" class="type-tab" data-type="note">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            Note
+          </button>
+        </div>
+
+        <!-- Title field -->
+        <div class="field">
+          <label for="field-title">Title</label>
+          <input id="field-title" type="text" placeholder="Page title…" />
+        </div>
+
+        <!-- URL field (link mode only) -->
+        <div id="url-field" class="field">
+          <label for="field-url">URL</label>
+          <input id="field-url" type="url" placeholder="https://…" readonly />
+        </div>
+
+        <!-- Highlight notice (shown when text is selected) -->
+        <div id="highlight-notice" class="notice notice-amber hidden">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <span id="highlight-preview"></span>
+        </div>
+
+        <!-- Note field -->
+        <div class="field">
+          <label for="field-note" id="label-note">Note <span class="optional">(optional)</span></label>
+          <textarea id="field-note" placeholder="Add a note…" rows="3"></textarea>
+        </div>
+
+        <!-- Tags field -->
+        <div class="field">
+          <label for="field-tags">Tags <span class="optional">(comma-separated)</span></label>
+          <input id="field-tags" type="text" placeholder="react, tutorial, ux…" />
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <div id="workspace-label" class="workspace-badge"></div>
+        <div class="footer-actions">
+          <button id="btn-open-site" class="btn btn-ghost" title="Open Dropboard">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </button>
+          <button id="btn-save" class="btn btn-primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21l-7-4-7 4V5a2 2 0 012-2h10a2 2 0 012 2v16z"/>
+            </svg>
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success state -->
+    <div id="state-success" class="state-screen hidden">
+      <div class="success-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <p class="success-title">Saved!</p>
+      <p id="success-subtitle" class="success-sub"></p>
+      <button id="btn-view" class="btn btn-outline btn-sm">View in Pinboard</button>
+    </div>
+
+    <!-- Error state -->
+    <div id="state-error" class="state-screen hidden">
+      <div class="error-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <p class="error-title">Something went wrong</p>
+      <p id="error-message" class="error-sub"></p>
+      <button id="btn-retry" class="btn btn-outline btn-sm">Try Again</button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

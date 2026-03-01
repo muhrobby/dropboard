@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getShareByToken, recordShareAccess } from "@/services/share-service";
+import { getShareByToken, recordShareAccess, hashIp } from "@/services/share-service";
 import { AppError } from "@/lib/errors";
 import { buildSignedUrl } from "@/lib/file-storage";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
@@ -12,10 +12,20 @@ export async function GET(
 
     const { share, item, fileAsset } = await getShareByToken(token);
 
-    // Record access
-    await recordShareAccess(share.id);
+    // Collect analytics metadata (privacy-preserving)
+    const rawIp =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      req.headers.get("x-real-ip") ??
+      "unknown";
+    const ipHash = rawIp !== "unknown" ? hashIp(rawIp) : null;
+    const userAgent = req.headers.get("user-agent")?.slice(0, 512) ?? null;
+    const referer = req.headers.get("referer")?.slice(0, 512) ?? null;
 
-    const isProtected = !!item.passwordHash;
+    // Record access (fire-and-forget on analytics write; awaited for counter bump)
+    await recordShareAccess(share.id, { ipHash: ipHash ?? undefined, userAgent: userAgent ?? undefined, referer: referer ?? undefined });
+
+    // Share-level password protection takes precedence over item-level
+    const isProtected = !!(share.passwordHash ?? item.passwordHash);
 
     // Generate signed URL for file if it's a drop and NOT protected
     let fileAssetWithUrl = null;
@@ -38,6 +48,8 @@ export async function GET(
           token: share.token,
           expiresAt: share.expiresAt,
           accessCount: share.accessCount + 1, // Include this access
+          maxViews: share.maxViews,
+          burnAfterReading: share.burnAfterReading,
           createdAt: share.createdAt,
         },
         item: {

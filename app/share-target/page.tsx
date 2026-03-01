@@ -168,7 +168,7 @@ function ShareTargetContent() {
         toast.success("Note saved!");
       }
 
-      router.push("/dashboard/drops");
+      router.push(shareType === "drop" ? "/dashboard/drops" : "/dashboard/pinboard");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save");
     } finally {

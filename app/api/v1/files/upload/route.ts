@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     const note = (formData.get("note") as string) || "";
     const tagsRaw = formData.get("tags") as string | null;
     const isPinnedRaw = formData.get("isPinned") as string | null;
+    const collectionId = formData.get("collectionId") as string | null;
 
     if (!file) {
       return validationErrorResponse("file is required");
@@ -126,6 +127,7 @@ export async function POST(request: NextRequest) {
       maxDownloads: metaResult.data.maxDownloads,
       passwordHash,
       fileAssetId: uploadResult.fileAssetId,
+      collectionId: collectionId || null,
     });
 
     // Queue OCR for supported image types

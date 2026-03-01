@@ -37,6 +37,12 @@ async function countPinnedItems(workspaceId: string): Promise<number> {
   return result[0]?.count ?? 0;
 }
 
+type LinkMetadataValue = {
+  ogImage?: string | null;
+  ogDescription?: string | null;
+  faviconUrl?: string | null;
+} | null;
+
 type CreateItemData = {
   workspaceId: string;
   createdBy: string;
@@ -50,6 +56,8 @@ type CreateItemData = {
   retentionDays?: number;
   maxDownloads?: number;
   fileAssetId?: string | null;
+  collectionId?: string | null;
+  linkMetadata?: LinkMetadataValue;
 };
 
 type ListItemsFilters = {
@@ -110,6 +118,8 @@ export async function createItem(data: CreateItemData) {
     expiresAt,
     maxDownloads,
     fileAssetId: data.fileAssetId ?? null,
+    collectionId: data.collectionId ?? null,
+    linkMetadata: data.linkMetadata ?? null,
     createdAt: now,
     updatedAt: now,
   });
@@ -230,6 +240,7 @@ export async function updateItem(
     note?: string | null;
     content?: string;
     tags?: string[];
+    collectionId?: string | null;
   },
 ) {
   // Verify exists
@@ -240,6 +251,7 @@ export async function updateItem(
   if (data.note !== undefined) updateData.note = data.note;
   if (data.content !== undefined) updateData.content = data.content;
   if (data.tags !== undefined) updateData.tags = data.tags;
+  if (data.collectionId !== undefined) updateData.collectionId = data.collectionId;
 
   if (Object.keys(updateData).length > 0) {
     updateData.updatedAt = new Date();
@@ -402,6 +414,15 @@ export async function pinItem(id: string) {
     metadata: { title: item.title },
   });
 
+  return getItem(id);
+}
+
+export async function setAvailableOffline(id: string, availableOffline: boolean) {
+  const item = await getItem(id);
+  await db
+    .update(items)
+    .set({ availableOffline, updatedAt: new Date() })
+    .where(eq(items.id, id));
   return getItem(id);
 }
 

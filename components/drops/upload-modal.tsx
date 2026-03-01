@@ -42,6 +42,7 @@ export function UploadModal() {
   const isOpen = useUIStore((s) => s.isUploadModalOpen);
   const setOpen = useUIStore((s) => s.setUploadModalOpen);
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
+  const uploadTargetCollectionId = useUIStore((s) => s.uploadTargetCollectionId);
   const { data: subscription } = useSubscription();
   const isFreeTier = subscription?.plan === "Free";
   const uploadSingle = useUpload();
@@ -208,6 +209,7 @@ export function UploadModal() {
         await uploadSingle.mutateAsync({
           file,
           workspaceId: activeWorkspaceId,
+          collectionId: uploadTargetCollectionId,
           title: isFolderMode ? undefined : title || undefined,
           note: note || undefined,
           tags: tags.length > 0 ? tags : undefined,
@@ -227,6 +229,7 @@ export function UploadModal() {
         await uploadMultiple.mutateAsync({
           files,
           workspaceId: activeWorkspaceId,
+          collectionId: uploadTargetCollectionId,
           folderName: folderName,
           note: note || undefined,
           tags: tags.length > 0 ? tags : undefined,

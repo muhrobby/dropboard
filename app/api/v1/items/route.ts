@@ -18,6 +18,7 @@ import {
   createNoteSchema,
 } from "@/lib/validations/item";
 import { fetchLinkTitle } from "@/lib/link-title";
+import { scrapeOGMetadata } from "@/lib/og-scraper";
 import { AppError, ForbiddenError } from "@/lib/errors";
 import bcrypt from "bcrypt";
 
@@ -94,10 +95,12 @@ export async function POST(request: NextRequest) {
       const title =
         result.data.title || (await fetchLinkTitle(result.data.content));
 
-      let passwordHash: string | null = null;
-      if (result.data.password) {
-        passwordHash = await bcrypt.hash(result.data.password, 10);
-      }
+      // Scrape OG metadata in parallel with password hashing
+      const [ogMetadata, resolvedPasswordHash] = await Promise.all([
+        scrapeOGMetadata(result.data.content),
+        result.data.password ? bcrypt.hash(result.data.password, 10) : Promise.resolve(null),
+      ]);
+      const passwordHash = resolvedPasswordHash;
 
       const item = await createItem({
         workspaceId,
@@ -111,6 +114,11 @@ export async function POST(request: NextRequest) {
         isPinned: true,
         retentionDays: result.data.retentionDays,
         maxDownloads: result.data.maxDownloads,
+        linkMetadata: {
+          ogImage: ogMetadata.ogImage,
+          ogDescription: ogMetadata.ogDescription,
+          faviconUrl: ogMetadata.faviconUrl,
+        },
       });
 
       return createdResponse(item);

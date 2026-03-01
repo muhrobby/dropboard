@@ -15,6 +15,8 @@ import { Menu, Search } from "lucide-react";
 import { useUIStore } from "@/stores/ui-store";
 import Link from "next/link";
 import { TierBadge } from "@/components/layout/tier-badge";
+import { OfflineStatusBadge } from "@/components/shared/offline-status-badge";
+import { BackgroundUploadListener } from "@/components/shared/background-upload-listener";
 
 export function Topbar() {
   const router = useRouter();
@@ -50,6 +52,10 @@ export function Topbar() {
       </Button>
 
       <div className="flex-1" />
+
+      {/* Offline indicator */}
+      <OfflineStatusBadge />
+      <BackgroundUploadListener />
 
       {/* Search shortcut */}
       <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full" asChild>
